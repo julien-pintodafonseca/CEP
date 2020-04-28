@@ -28,7 +28,8 @@ architecture RTL of CPU_PC is
         S_Pre_Fetch,
         S_Fetch,
         S_Decode,
-        S_LUI
+        S_LUI,
+        S_ADDI
     );
 
     signal state_d, state_q : State_type;
@@ -60,7 +61,7 @@ begin
 
         cmd.RF_we             <= '0';
         cmd.RF_SIZE_sel       <= UNDEFINED;
-        cmd.RF_SIGN_enable    <= 'U';
+        cmd.RF_SIGN_enable    <= '0';
         cmd.DATA_sel          <= UNDEFINED;
 
         cmd.PC_we             <= '0';
@@ -107,10 +108,10 @@ begin
 
             when S_Pre_Fetch =>
                 -- mem[PC]
-                cmd.mem_we   <= '0';
-                cmd.mem_ce   <= '1';
+                cmd.mem_we <= '0';
+                cmd.mem_ce <= '1';
                 cmd.ADDR_sel <= ADDR_from_pc;
-                state_d      <= S_Fetch;
+                state_d <= S_Fetch;
 
             when S_Fetch =>
                 -- IR <- mem_datain
@@ -120,6 +121,7 @@ begin
             when S_Decode =>
                 -- On peut aussi utiliser un case,
                 -- (et ne pas le faire pour les branchements et auipc)
+
                 if status.IR(6 downto 0) = "0110111" then
                     --- PC <- PC + 4
                     cmd.TO_PC_Y_sel <= To_PC_Y_cst_x04;
@@ -127,24 +129,44 @@ begin
                     cmd.PC_we <= '1';
                     -- LUI
                     state_d <= S_LUI;
+                elsif status.IR(6 downto 0) = "0010011" then
+                    --- PC <- PC + 4
+                    cmd.TO_PC_Y_sel <= To_PC_Y_cst_x04;
+                    cmd.PC_sel <= PC_from_pc;
+                    cmd.PC_we <= '1';
+                    -- ADDI
+                    state_d <= S_ADDI;
                 else
                     state_d <= S_Error; -- Pour détecter les ratés du décodage
                 end if;
 
             ---------- Instructions avec immediat de type U ----------
             when S_LUI =>
-                -- rd <- Immu + 0
+                -- rd <- immU + 0
                 cmd.PC_X_sel <= PC_X_cst_x00;
                 cmd.PC_Y_sel <= PC_Y_immU;
-                cmd.RF_we <= '1';
                 cmd.DATA_sel <= DATA_from_pc;
+                cmd.RF_we <= '1';
                 -- lecture mem[PC]
                 cmd.ADDR_sel <= ADDR_from_pc;
-                cmd.mem_ce <= '1';
                 cmd.mem_we <= '0';
+                cmd.mem_ce <= '1';
                 -- next state
                 state_d <= S_Fetch;
+
             ---------- Instructions arithmétiques et logiques ----------
+            when S_ADDI =>
+                -- rd <- rs1 + immI
+                cmd.ALU_Y_SEL <= ALU_Y_immI;
+                cmd.ALU_op <= ALU_plus;
+                cmd.DATA_sel <= DATA_from_alu;
+                cmd.RF_we <= '1';
+                -- lecture mem[PC]
+                cmd.ADDR_sel <= ADDR_from_pc;
+                cmd.mem_we <= '0';
+                cmd.mem_ce <= '1';
+                -- next state
+                state_d <= S_Fetch;
 
             ---------- Instructions de saut ----------
 
@@ -156,7 +178,7 @@ begin
 
             when others => null;
         end case;
-
+        
     end process FSM_comb;
 
 end architecture;
