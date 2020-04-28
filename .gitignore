@@ -1,0 +1,6 @@
+# Log files
+*.res
+log
+
+# CEP cache #
+.CEPcache/
