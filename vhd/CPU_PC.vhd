@@ -36,7 +36,8 @@ architecture RTL of CPU_PC is
         S_ORI,
         S_OR,
         S_XORI,
-        S_XOR
+        S_XOR,
+        S_SUB
     );
 
     signal state_d, state_q : State_type;
@@ -158,8 +159,17 @@ begin
                     when "0110011" =>
                         case status.IR(14 downto 12) is
                             when "000" =>
-                                -- ADD
-                                state_d <= S_ADD;
+                                case status.IR(31 downto 25) is
+                                    when "0000000" =>
+                                        -- ADD
+                                        state_d <= S_ADD;
+                                    when "0100000" =>
+                                        -- SUB
+                                        state_d <= S_SUB;
+                                    when others =>
+                                        -- Pour détecter les ratés du décodage
+                                        state_d <= S_Error;
+                                    end case;
                             when "111" =>
                                 -- AND
                                 state_d <= S_AND;
@@ -193,7 +203,7 @@ begin
                 state_d <= S_Fetch;
 
             ---------- Instructions arithmétiques et logiques ----------
-            when S_ADDI | S_ADD | S_ANDI | S_AND | S_ORI | S_OR | S_XORI | S_XOR =>
+            when S_ADDI | S_ADD | S_ANDI | S_AND | S_ORI | S_OR | S_XORI | S_XOR | S_SUB =>
                 if state_q = S_ADDI then
                     -- rd <- rs1 + immI
                     cmd.ALU_Y_sel <= ALU_Y_immI;
@@ -234,6 +244,11 @@ begin
                     cmd.ALU_Y_sel <= ALU_Y_rf_rs2;
                     cmd.LOGICAL_op <= LOGICAL_xor;
                     cmd.DATA_sel <= DATA_from_logical;
+                elsif state_q = S_SUB then
+                    -- rd <- rs1 - rs2
+                    cmd.ALU_Y_sel <= ALU_Y_rf_rs2;
+                    cmd.ALU_op <= ALU_minus;
+                    cmd.DATA_sel <= DATA_from_alu;
                 end if;
                 cmd.RF_we <= '1';
                 -- lecture mem[PC]
