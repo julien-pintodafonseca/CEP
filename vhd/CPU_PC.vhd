@@ -31,10 +31,11 @@ architecture RTL of CPU_PC is
         S_LUI,
         S_ADDI,
         S_ADD,
-        S_AND,
-        S_OR,
-        S_ORI,
         S_ANDI,
+        S_AND,
+        S_ORI,
+        S_OR,
+        S_XORI,
         S_XOR
     );
 
@@ -147,6 +148,9 @@ begin
                             when "110" =>
                                 -- ORI
                                 state_d <= S_ORI;
+                            when "100" =>
+                                -- XORI
+                                state_d <= S_XORI;
                             when others =>
                                 -- Pour détecter les ratés du décodage
                                 state_d <= S_Error;
@@ -189,7 +193,7 @@ begin
                 state_d <= S_Fetch;
 
             ---------- Instructions arithmétiques et logiques ----------
-            when S_ADDI | S_ADD | S_AND | S_OR | S_ORI | S_ANDI | S_XOR =>
+            when S_ADDI | S_ADD | S_ANDI | S_AND | S_ORI | S_OR | S_XORI | S_XOR =>
                 if state_q = S_ADDI then
                     -- rd <- rs1 + immI
                     cmd.ALU_Y_sel <= ALU_Y_immI;
@@ -200,25 +204,30 @@ begin
                     cmd.ALU_Y_sel <= ALU_Y_rf_rs2;
                     cmd.ALU_op <= ALU_plus;
                     cmd.DATA_sel <= DATA_from_alu;
+                elsif state_q = S_ANDI then
+                    -- rd <- rs1 and immI
+                    cmd.ALU_Y_sel <= ALU_Y_immI;
+                    cmd.LOGICAL_op <= LOGICAL_and;
+                    cmd.DATA_sel <= DATA_from_logical;
                 elsif state_q = S_AND then
                     -- rd <- rs1 and rs2
                     cmd.ALU_Y_sel <= ALU_Y_rf_rs2;
                     cmd.LOGICAL_op <= LOGICAL_and;
-                    cmd.DATA_sel <= DATA_from_logical;
-                elsif state_q = S_OR then
-                    -- rd <- rs1 or rs2
-                    cmd.ALU_Y_sel <= ALU_Y_rf_rs2;
-                    cmd.LOGICAL_op <= LOGICAL_or;
                     cmd.DATA_sel <= DATA_from_logical;
                 elsif state_q = S_ORI then
                     -- rd <- rs1 or immI
                     cmd.ALU_Y_sel <= ALU_Y_immI;
                     cmd.LOGICAL_op <= LOGICAL_or;
                     cmd.DATA_sel <= DATA_from_logical;
-                elsif state_q = S_ANDI then
-                    -- rd <- rs1 and immI
+                elsif state_q = S_OR then
+                    -- rd <- rs1 or rs2
+                    cmd.ALU_Y_sel <= ALU_Y_rf_rs2;
+                    cmd.LOGICAL_op <= LOGICAL_or;
+                    cmd.DATA_sel <= DATA_from_logical;
+                elsif state_q = S_XORI then
+                    -- rd <- rs1 xor immI
                     cmd.ALU_Y_sel <= ALU_Y_immI;
-                    cmd.LOGICAL_op <= LOGICAL_and;
+                    cmd.LOGICAL_op <= LOGICAL_xor;
                     cmd.DATA_sel <= DATA_from_logical;
                 elsif state_q = S_XOR then
                     -- rd <- rs1 xor rs2
