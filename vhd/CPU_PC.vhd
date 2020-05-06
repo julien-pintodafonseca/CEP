@@ -29,7 +29,8 @@ architecture RTL of CPU_PC is
         S_Fetch,
         S_Decode,
         S_LUI,
-        S_ADDI
+        S_ADDI,
+        S_ADD
     );
 
     signal state_d, state_q : State_type;
@@ -119,26 +120,27 @@ begin
                 state_d <= S_Decode;
 
             when S_Decode =>
-                -- On peut aussi utiliser un case,
-                -- (et ne pas le faire pour les branchements et auipc)
+                -- (prévoir cas spécial pour les branchements et auipc)
 
-                if status.IR(6 downto 0) = "0110111" then
-                    --- PC <- PC + 4
-                    cmd.TO_PC_Y_sel <= To_PC_Y_cst_x04;
-                    cmd.PC_sel <= PC_from_pc;
-                    cmd.PC_we <= '1';
-                    -- LUI
-                    state_d <= S_LUI;
-                elsif status.IR(6 downto 0) = "0010011" then
-                    --- PC <- PC + 4
-                    cmd.TO_PC_Y_sel <= To_PC_Y_cst_x04;
-                    cmd.PC_sel <= PC_from_pc;
-                    cmd.PC_we <= '1';
-                    -- ADDI
-                    state_d <= S_ADDI;
-                else
-                    state_d <= S_Error; -- Pour détecter les ratés du décodage
-                end if;
+                --- PC <- PC + 4
+                cmd.TO_PC_Y_sel <= To_PC_Y_cst_x04;
+                cmd.PC_sel <= PC_from_pc;
+                cmd.PC_we <= '1';
+                --- Changement d'etat
+                case status.IR(6 downto 0) is
+                    when "0110111" =>
+                        -- LUI
+                        state_d <= S_LUI;
+                    when "0010011" =>
+                        -- ADDI
+                        state_d <= S_ADDI;
+                    when "0110011" =>
+                        -- ADD
+                        state_d <= S_ADD;
+                    when others =>
+                        -- Pour détecter les ratés du décodage
+                        state_d <= S_Error;
+                end case;
 
             ---------- Instructions avec immediat de type U ----------
             when S_LUI =>
@@ -155,9 +157,14 @@ begin
                 state_d <= S_Fetch;
 
             ---------- Instructions arithmétiques et logiques ----------
-            when S_ADDI =>
-                -- rd <- rs1 + immI
-                cmd.ALU_Y_SEL <= ALU_Y_immI;
+            when S_ADDI | S_ADD =>
+                if state_q = S_ADDI then
+                    -- rd <- rs1 + immI
+                    cmd.ALU_Y_SEL <= ALU_Y_immI;
+                else
+                    -- rd <- rs1 + rs2
+                    cmd.ALU_Y_SEL <= ALU_Y_rf_rs2;
+                end if;
                 cmd.ALU_op <= ALU_plus;
                 cmd.DATA_sel <= DATA_from_alu;
                 cmd.RF_we <= '1';
