@@ -30,7 +30,8 @@ architecture RTL of CPU_PC is
         S_Decode,
         S_LUI,
         S_ADDI,
-        S_ADD
+        S_ADD,
+        S_AND
     );
 
     signal state_d, state_q : State_type;
@@ -120,7 +121,7 @@ begin
                 state_d <= S_Decode;
 
             when S_Decode =>
-                -- (prévoir cas spécial pour les branchements et auipc)
+                -- (prévoir cas spéciaux pour les branchements et auipc)
 
                 --- PC <- PC + 4
                 cmd.TO_PC_Y_sel <= To_PC_Y_cst_x04;
@@ -135,8 +136,17 @@ begin
                         -- ADDI
                         state_d <= S_ADDI;
                     when "0110011" =>
-                        -- ADD
-                        state_d <= S_ADD;
+                        case status.IR(14 downto 12) is
+                            when "000" =>
+                                -- ADD
+                                state_d <= S_ADD;
+                            when "111" =>
+                                -- AND
+                                state_d <= S_AND;
+                            when others =>
+                                -- Pour détecter les ratés du décodage
+                                state_d <= S_Error;
+                        end case;
                     when others =>
                         -- Pour détecter les ratés du décodage
                         state_d <= S_Error;
@@ -157,16 +167,23 @@ begin
                 state_d <= S_Fetch;
 
             ---------- Instructions arithmétiques et logiques ----------
-            when S_ADDI | S_ADD =>
+            when S_ADDI | S_ADD | S_AND =>
                 if state_q = S_ADDI then
                     -- rd <- rs1 + immI
-                    cmd.ALU_Y_SEL <= ALU_Y_immI;
-                else
+                    cmd.ALU_Y_sel <= ALU_Y_immI;
+                    cmd.ALU_op <= ALU_plus;
+                    cmd.DATA_sel <= DATA_from_alu;
+                elsif state_q = S_ADD then
                     -- rd <- rs1 + rs2
-                    cmd.ALU_Y_SEL <= ALU_Y_rf_rs2;
+                    cmd.ALU_Y_sel <= ALU_Y_rf_rs2;
+                    cmd.ALU_op <= ALU_plus;
+                    cmd.DATA_sel <= DATA_from_alu;
+                elsif state_q = S_AND then
+                    -- rd <- rs1 and rs2
+                    cmd.ALU_Y_sel <= ALU_Y_rf_rs2;
+                    cmd.LOGICAL_op <= LOGICAL_and;
+                    cmd.DATA_sel <= DATA_from_logical;
                 end if;
-                cmd.ALU_op <= ALU_plus;
-                cmd.DATA_sel <= DATA_from_alu;
                 cmd.RF_we <= '1';
                 -- lecture mem[PC]
                 cmd.ADDR_sel <= ADDR_from_pc;
