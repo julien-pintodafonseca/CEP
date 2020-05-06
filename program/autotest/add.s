@@ -9,7 +9,7 @@
 	add x31, x0, x0  #Test addition registre 0 + registre 0  / 0 + 0 = 0
 	add x31, x31, x0 #Test addition registre 31 + registre 0 / 0 + 0 = 0
 	add x31, x0, x2  #Test addition registre 0 + registre 2  / 0 + 9 = 9
-	add x31, x31, x3 #Test addition registre 31 + registre 3 / 9 + (-15) = -4
+	add x31, x31, x3 #Test addition registre 31 + registre 3 / 9 + -15 = -4
 	add x31, x0, x7  #Test addition registre 0 + registre 7  / 0 + 0x7FF = 0x7FF
 	add x31, x7, x8  #Test addition registre 7 + registre 8  / 0x7FF + -0x7FF = 0
 	add x31, x31, x9 #Test addition registre 31 + registre 9 / 0 + -0x800 = -0x800
