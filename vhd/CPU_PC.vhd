@@ -32,7 +32,8 @@ architecture RTL of CPU_PC is
         S_ADDI,
         S_ADD,
         S_AND,
-        S_OR
+        S_OR,
+        S_ORI
     );
 
     signal state_d, state_q : State_type;
@@ -134,8 +135,17 @@ begin
                         -- LUI
                         state_d <= S_LUI;
                     when "0010011" =>
-                        -- ADDI
-                        state_d <= S_ADDI;
+                        case status.IR(14 downto 12) is
+                            when "000" =>
+                                -- ADDI
+                                state_d <= S_ADDI;
+                            when "110" =>
+                                -- ORI
+                                state_d <= S_ORI;
+                            when others =>
+                                -- Pour détecter les ratés du décodage
+                                state_d <= S_Error;
+                        end case;
                     when "0110011" =>
                         case status.IR(14 downto 12) is
                             when "000" =>
@@ -171,7 +181,7 @@ begin
                 state_d <= S_Fetch;
 
             ---------- Instructions arithmétiques et logiques ----------
-            when S_ADDI | S_ADD | S_AND | S_OR =>
+            when S_ADDI | S_ADD | S_AND | S_OR | S_ORI =>
                 if state_q = S_ADDI then
                     -- rd <- rs1 + immI
                     cmd.ALU_Y_sel <= ALU_Y_immI;
@@ -190,6 +200,11 @@ begin
                 elsif state_q = S_OR then
                     -- rd <- rs1 or rs2
                     cmd.ALU_Y_sel <= ALU_Y_rf_rs2;
+                    cmd.LOGICAL_op <= LOGICAL_or;
+                    cmd.DATA_sel <= DATA_from_logical;
+                elsif state_q = S_ORI then
+                    -- rd <- rs1 or immI
+                    cmd.ALU_Y_sel <= ALU_Y_immI;
                     cmd.LOGICAL_op <= LOGICAL_or;
                     cmd.DATA_sel <= DATA_from_logical;
                 end if;
