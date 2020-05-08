@@ -37,7 +37,8 @@ architecture RTL of CPU_PC is
         S_OR,
         S_XORI,
         S_XOR,
-        S_SUB
+        S_SUB,
+        S_AUIPC
     );
 
     signal state_d, state_q : State_type;
@@ -127,17 +128,21 @@ begin
                 state_d <= S_Decode;
 
             when S_Decode =>
-                -- (prévoir cas spéciaux pour les branchements et auipc)
+                if status.IR(6 downto 0) /= "0010111" then
+                    --- PC <- PC + 4
+                    cmd.TO_PC_Y_sel <= To_PC_Y_cst_x04;
+                    cmd.PC_sel <= PC_from_pc;
+                    cmd.PC_we <= '1';
+                end if;
 
-                --- PC <- PC + 4
-                cmd.TO_PC_Y_sel <= To_PC_Y_cst_x04;
-                cmd.PC_sel <= PC_from_pc;
-                cmd.PC_we <= '1';
                 --- Changement d'etat
                 case status.IR(6 downto 0) is
                     when "0110111" =>
                         -- LUI
                         state_d <= S_LUI;
+                    when "0010111" =>
+                        -- AUIPC
+                        state_d <= S_AUIPC;
                     when "0010011" =>
                         case status.IR(14 downto 12) is
                             when "000" =>
@@ -201,6 +206,19 @@ begin
                 cmd.mem_ce <= '1';
                 -- next state
                 state_d <= S_Fetch;
+            
+            when S_AUIPC =>
+                -- rd <- immU + pc
+                cmd.PC_X_sel <= PC_X_pc;
+                cmd.PC_Y_sel <= PC_Y_immU;
+                cmd.DATA_sel <= DATA_from_pc;
+                cmd.RF_we <= '1';
+                --- PC <- PC + 4
+                cmd.TO_PC_Y_sel <= To_PC_Y_cst_x04;
+                cmd.PC_sel <= PC_from_pc;
+                cmd.PC_we <= '1';
+                -- next state
+                state_d <= S_Pre_Fetch;
 
             ---------- Instructions arithmétiques et logiques ----------
             when S_ADDI | S_ADD | S_ANDI | S_AND | S_ORI | S_OR | S_XORI | S_XOR | S_SUB =>
