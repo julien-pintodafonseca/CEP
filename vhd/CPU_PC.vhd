@@ -42,7 +42,8 @@ architecture RTL of CPU_PC is
         S_SLL,
         S_SRL,
         S_SRA,
-        S_SRAI
+        S_SRAI,
+        S_SLLI
     );
 
     signal state_d, state_q : State_type;
@@ -164,6 +165,9 @@ begin
                             when "101" =>
                                 -- SRAI
                                 state_d <= S_SRAI;
+                            when "001" =>
+                                -- SRAI
+                                state_d <= S_SLLI;
                             when others =>
                                 -- Pour détecter les ratés du décodage
                                 state_d <= S_Error;
@@ -308,7 +312,7 @@ begin
                 -- next state
                 state_d <= S_Fetch;
             
-            when S_SLL | S_SRL | S_SRA | S_SRAI =>
+            when S_SLL | S_SRL | S_SRA | S_SRAI | S_SLLI =>
                 if state_q = S_SLL then
                     -- rd <- sll(rs1,rs2)
                     cmd.SHIFTER_Y_sel <= SHIFTER_Y_rs2;
@@ -325,6 +329,10 @@ begin
                     -- rd <- srai(rs1,shamt)
                     cmd.SHIFTER_Y_sel <= SHIFTER_Y_ir_sh;
                     cmd.SHIFTER_op <= SHIFT_ra;
+                elsif state_q = S_SLLI then
+                    -- rd <- slli(rs1,shamt)
+                    cmd.SHIFTER_Y_sel <= SHIFTER_Y_ir_sh;
+                    cmd.SHIFTER_op <= SHIFT_ll;
                 end if;
                 cmd.DATA_sel <= DATA_from_shifter;
                 cmd.RF_we <= '1';
