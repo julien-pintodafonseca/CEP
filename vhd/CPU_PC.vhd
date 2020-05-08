@@ -38,7 +38,8 @@ architecture RTL of CPU_PC is
         S_XORI,
         S_XOR,
         S_SUB,
-        S_AUIPC
+        S_AUIPC,
+        S_SLL
     );
 
     signal state_d, state_q : State_type;
@@ -96,8 +97,8 @@ begin
         cmd.cs.CSR_sel           <= UNDEFINED;
         cmd.cs.MEPC_sel          <= UNDEFINED;
 
-        cmd.cs.MSTATUS_mie_set   <= 'U';
-        cmd.cs.MSTATUS_mie_reset <= 'U';
+        cmd.cs.MSTATUS_mie_set   <= '0';
+        cmd.cs.MSTATUS_mie_reset <= '0';
 
         cmd.cs.CSR_WRITE_mode    <= UNDEFINED;
 
@@ -184,6 +185,9 @@ begin
                             when "100" =>
                                 -- XOR
                                 state_d <= S_XOR;
+                            when "001" =>
+                                -- XOR
+                                state_d <= S_SLL;
                             when others =>
                                 -- Pour détecter les ratés du décodage
                                 state_d <= S_Error;
@@ -221,7 +225,7 @@ begin
                 state_d <= S_Pre_Fetch;
 
             ---------- Instructions arithmétiques et logiques ----------
-            when S_ADDI | S_ADD | S_ANDI | S_AND | S_ORI | S_OR | S_XORI | S_XOR | S_SUB =>
+            when S_ADDI | S_ADD | S_SUB =>
                 if state_q = S_ADDI then
                     -- rd <- rs1 + immI
                     cmd.ALU_Y_sel <= ALU_Y_immI;
@@ -232,7 +236,22 @@ begin
                     cmd.ALU_Y_sel <= ALU_Y_rf_rs2;
                     cmd.ALU_op <= ALU_plus;
                     cmd.DATA_sel <= DATA_from_alu;
-                elsif state_q = S_ANDI then
+                elsif state_q = S_SUB then
+                    -- rd <- rs1 - rs2
+                    cmd.ALU_Y_sel <= ALU_Y_rf_rs2;
+                    cmd.ALU_op <= ALU_minus;
+                    cmd.DATA_sel <= DATA_from_alu;
+                end if;
+                cmd.RF_we <= '1';
+                -- lecture mem[PC]
+                cmd.ADDR_sel <= ADDR_from_pc;
+                cmd.mem_we <= '0';
+                cmd.mem_ce <= '1';
+                -- next state
+                state_d <= S_Fetch;
+            
+            when S_ANDI | S_AND | S_ORI | S_OR | S_XORI | S_XOR =>
+                if state_q = S_ANDI then
                     -- rd <- rs1 and immI
                     cmd.ALU_Y_sel <= ALU_Y_immI;
                     cmd.LOGICAL_op <= LOGICAL_and;
@@ -262,12 +281,19 @@ begin
                     cmd.ALU_Y_sel <= ALU_Y_rf_rs2;
                     cmd.LOGICAL_op <= LOGICAL_xor;
                     cmd.DATA_sel <= DATA_from_logical;
-                elsif state_q = S_SUB then
-                    -- rd <- rs1 - rs2
-                    cmd.ALU_Y_sel <= ALU_Y_rf_rs2;
-                    cmd.ALU_op <= ALU_minus;
-                    cmd.DATA_sel <= DATA_from_alu;
                 end if;
+                cmd.RF_we <= '1';
+                -- lecture mem[PC]
+                cmd.ADDR_sel <= ADDR_from_pc;
+                cmd.mem_we <= '0';
+                cmd.mem_ce <= '1';
+                -- next state
+                state_d <= S_Fetch;
+            
+            when S_SLL =>
+                cmd.SHIFTER_Y_sel <= SHIFTER_Y_rs2;
+                cmd.SHIFTER_op <= SHIFT_rl;
+                cmd.DATA_sel <= DATA_from_shifter;
                 cmd.RF_we <= '1';
                 -- lecture mem[PC]
                 cmd.ADDR_sel <= ADDR_from_pc;
