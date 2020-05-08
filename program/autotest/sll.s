@@ -4,40 +4,44 @@
 	addi x2, x0, 2
 	addi x3, x0, 3
 	addi x4, x0, 4
-	addi x5, x0, 7
-	addi x6, x0, 10
-	addi x7, x0, 11
-	addi x8, x0, 16
-	addi x9, x0, 31
+	addi x5, x0, 16
+	addi x6, x0, 21
+	addi x7, x0, 31
+	addi x8, x0, 32
+	addi x9, x0, 63
 	addi x10, x0, 0x7FF
 	addi x11, x0, -0x800
 	sll x31, x0, x1 #Test décalage 0x00000000 de 1 vers la gauche = 0x00000000
 	sll x31, x10, x0 #Test décalage 0x000007FF de 0 vers la gauche = 0x000007FF
-	sll x31, x10, x1 #Test décalage 0x000007FF de 1 vers la gauche = 0x000003FF
-	sll x31, x10, x2 #Test décalage 0x000007FF de 2 vers la gauche = 0x000001FF
-	sll x31, x10, x3 #Test décalage 0x000007FF de 3 vers la gauche = 0x000000FF
-	sll x31, x10, x4 #Test décalage 0x000007FF de 4 vers la gauche = 0x0000007F
-	sll x31, x10, x5 #Test décalage 0x000007FF de 7 vers la gauche = 0x0000000F
-	sll x31, x10, x6 #Test décalage 0x000007FF de 10 vers la gauche = 0x00000001
-	sll x31, x10, x7 #Test décalage 0x000007FF de 11 vers la gauche = 0x00000000
-	sll x31, x11, x2 #Test décalage 0xFFFFF800 de 2 vers la gauche = 0x3FFFFE00
-	sll x31, x11, x7 #Test décalage 0xFFFFF800 de 11 vers la gauche = 0x001FFFFF
-	sll x31, x11, x8 #Test décalage 0xFFFFF800 de 16 vers la gauche = 0x0000FFFF
-	sll x31, x11, x9 #Test décalage 0xFFFFF800 de 31 vers la gauche = 0x00000001
+	sll x31, x10, x1 #Test décalage 0x000007FF de 1 vers la gauche = 0x00000FFE
+	sll x31, x10, x2 #Test décalage 0x000007FF de 2 vers la gauche = 0x00001FFC
+	sll x31, x10, x3 #Test décalage 0x000007FF de 3 vers la gauche = 0x00003FF8
+	sll x31, x10, x4 #Test décalage 0x000007FF de 4 vers la gauche = 0x00007FF0
+	sll x31, x10, x5 #Test décalage 0x000007FF de 16 vers la gauche = 0x07FF0000
+	sll x31, x10, x6 #Test décalage 0x000007FF de 21 vers la gauche = 0xFFE00000
+	sll x31, x10, x7 #Test décalage 0x000007FF de 31 vers la gauche = 0x80000000
+	sll x31, x10, x8 #Test décalage 0x000007FF de 32 vers la gauche = 0x000007FF
+	sll x31, x10, x9 #Test décalage 0x000007FF de 63 vers la gauche = 0x80000000
+	sll x31, x11, x4 #Test décalage 0xFFFFF800 de 4 vers la gauche = 0xFFFF8000
+	sll x31, x11, x5 #Test décalage 0xFFFFF800 de 16 vers la gauche = 0xF8000000
+	sll x31, x11, x7 #Test décalage 0xFFFFF800 de 31 vers la gauche = 0x00000000
+	sll x31, x11, x8 #Test décalage 0xFFFFF800 de 32 vers la gauche = 0xFFFFF800
 
 	# max_cycle 100
 	# pout_start
 	# 00000000
 	# 000007FF
-	# 000003FF
-	# 000001FF
-	# 000000FF
-	# 0000007F
-	# 0000000F
-	# 00000001
+	# 00000FFE
+	# 00001FFC
+	# 00003FF8
+	# 00007FF0
+	# 07FF0000
+	# FFE00000
+	# 80000000
+	# 000007FF
+	# 80000000
+	# FFFF8000
+	# F8000000
 	# 00000000
-	# 3FFFFE00
-	# 001FFFFF
-	# 0000FFFF
-	# 00000001
+	# FFFFF800
 	# pout_end

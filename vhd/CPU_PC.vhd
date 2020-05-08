@@ -186,7 +186,7 @@ begin
                                 -- XOR
                                 state_d <= S_XOR;
                             when "001" =>
-                                -- XOR
+                                -- SLL
                                 state_d <= S_SLL;
                             when others =>
                                 -- Pour détecter les ratés du décodage
@@ -291,8 +291,9 @@ begin
                 state_d <= S_Fetch;
             
             when S_SLL =>
+                -- rd <- sll(rs1,rs2)
                 cmd.SHIFTER_Y_sel <= SHIFTER_Y_rs2;
-                cmd.SHIFTER_op <= SHIFT_rl;
+                cmd.SHIFTER_op <= SHIFT_ll;
                 cmd.DATA_sel <= DATA_from_shifter;
                 cmd.RF_we <= '1';
                 -- lecture mem[PC]
