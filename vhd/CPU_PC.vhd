@@ -40,7 +40,8 @@ architecture RTL of CPU_PC is
         S_SUB,
         S_AUIPC,
         S_SLL,
-        S_SRL
+        S_SRL,
+        S_SRA
     );
 
     signal state_d, state_q : State_type;
@@ -190,8 +191,17 @@ begin
                                 -- SLL
                                 state_d <= S_SLL;
                             when "101" =>
-                                -- SRL
-                                state_d <= S_SRL;
+                                case status.IR(31 downto 25) is
+                                    when "0000000" =>
+                                        -- SRL
+                                        state_d <= S_SRL;
+                                    when "0100000" =>
+                                        -- SRA
+                                        state_d <= S_SRA;
+                                    when others =>
+                                        -- Pour détecter les ratés du décodage
+                                        state_d <= S_Error;
+                                    end case;
                             when others =>
                                 -- Pour détecter les ratés du décodage
                                 state_d <= S_Error;
@@ -294,7 +304,7 @@ begin
                 -- next state
                 state_d <= S_Fetch;
             
-            when S_SLL | S_SRL =>
+            when S_SLL | S_SRL | S_SRA =>
                 if state_q = S_SLL then
                     -- rd <- sll(rs1,rs2)
                     cmd.SHIFTER_Y_sel <= SHIFTER_Y_rs2;
@@ -303,6 +313,10 @@ begin
                     -- rd <- srl(rs1,rs2)
                     cmd.SHIFTER_Y_sel <= SHIFTER_Y_rs2;
                     cmd.SHIFTER_op <= SHIFT_rl;
+                elsif state_q = S_SRA then
+                    -- rd <- sra(rs1,rs2)
+                    cmd.SHIFTER_Y_sel <= SHIFTER_Y_rs2;
+                    cmd.SHIFTER_op <= SHIFT_ra;
                 end if;
                 cmd.DATA_sel <= DATA_from_shifter;
                 cmd.RF_we <= '1';
