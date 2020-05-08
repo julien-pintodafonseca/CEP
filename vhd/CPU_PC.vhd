@@ -42,8 +42,9 @@ architecture RTL of CPU_PC is
         S_SLL,
         S_SRL,
         S_SRA,
-        S_SRAI,
-        S_SLLI
+        S_SLLI,
+        S_SRLI,
+        S_SRAI
     );
 
     signal state_d, state_q : State_type;
@@ -66,34 +67,34 @@ begin
     begin
 
         -- Valeurs par défaut de cmd à définir selon les préférences de chacun
-        cmd.ALU_op            <= UNDEFINED;
-        cmd.LOGICAL_op        <= UNDEFINED;
-        cmd.ALU_Y_sel         <= UNDEFINED;
+        cmd.ALU_op               <= UNDEFINED;
+        cmd.LOGICAL_op           <= UNDEFINED;
+        cmd.ALU_Y_sel            <= UNDEFINED;
 
-        cmd.SHIFTER_op        <= UNDEFINED;
-        cmd.SHIFTER_Y_sel     <= UNDEFINED;
+        cmd.SHIFTER_op           <= UNDEFINED;
+        cmd.SHIFTER_Y_sel        <= UNDEFINED;
 
-        cmd.RF_we             <= '0';
-        cmd.RF_SIZE_sel       <= UNDEFINED;
-        cmd.RF_SIGN_enable    <= '0';
-        cmd.DATA_sel          <= UNDEFINED;
+        cmd.RF_we                <= '0';
+        cmd.RF_SIZE_sel          <= UNDEFINED;
+        cmd.RF_SIGN_enable       <= '0';
+        cmd.DATA_sel             <= UNDEFINED;
 
-        cmd.PC_we             <= '0';
-        cmd.PC_sel            <= UNDEFINED;
+        cmd.PC_we                <= '0';
+        cmd.PC_sel               <= UNDEFINED;
 
-        cmd.PC_X_sel          <= UNDEFINED;
-        cmd.PC_Y_sel          <= UNDEFINED;
+        cmd.PC_X_sel             <= UNDEFINED;
+        cmd.PC_Y_sel             <= UNDEFINED;
 
-        cmd.TO_PC_Y_sel       <= UNDEFINED;
+        cmd.TO_PC_Y_sel          <= UNDEFINED;
 
-        cmd.AD_we             <= '0';
-        cmd.AD_Y_sel          <= UNDEFINED;
+        cmd.AD_we                <= '0';
+        cmd.AD_Y_sel             <= UNDEFINED;
 
-        cmd.IR_we             <= '0';
+        cmd.IR_we                <= '0';
 
-        cmd.ADDR_sel          <= UNDEFINED;
-        cmd.mem_we            <= '0';
-        cmd.mem_ce            <= '0';
+        cmd.ADDR_sel             <= UNDEFINED;
+        cmd.mem_we               <= '0';
+        cmd.mem_ce               <= '0';
 
         cmd.cs.CSR_we            <= UNDEFINED;
 
@@ -163,10 +164,19 @@ begin
                                 -- XORI
                                 state_d <= S_XORI;
                             when "101" =>
-                                -- SRAI
-                                state_d <= S_SRAI;
+                                case status.IR(31 downto 25) is
+                                    when "0000000" =>
+                                        -- SRLI
+                                        state_d <= S_SRLI;
+                                    when "0100000" =>
+                                        -- SRAI
+                                        state_d <= S_SRAI;
+                                    when others =>
+                                        -- Pour détecter les ratés du décodage
+                                        state_d <= S_Error;
+                                    end case;
                             when "001" =>
-                                -- SRAI
+                                -- SLLI
                                 state_d <= S_SLLI;
                             when others =>
                                 -- Pour détecter les ratés du décodage
@@ -312,7 +322,7 @@ begin
                 -- next state
                 state_d <= S_Fetch;
             
-            when S_SLL | S_SRL | S_SRA | S_SRAI | S_SLLI =>
+            when S_SLL | S_SRL | S_SRA | S_SRAI | S_SLLI | S_SRLI =>
                 if state_q = S_SLL then
                     -- rd <- sll(rs1,rs2)
                     cmd.SHIFTER_Y_sel <= SHIFTER_Y_rs2;
@@ -325,14 +335,18 @@ begin
                     -- rd <- sra(rs1,rs2)
                     cmd.SHIFTER_Y_sel <= SHIFTER_Y_rs2;
                     cmd.SHIFTER_op <= SHIFT_ra;
-                elsif state_q = S_SRAI then
-                    -- rd <- srai(rs1,shamt)
-                    cmd.SHIFTER_Y_sel <= SHIFTER_Y_ir_sh;
-                    cmd.SHIFTER_op <= SHIFT_ra;
                 elsif state_q = S_SLLI then
                     -- rd <- slli(rs1,shamt)
                     cmd.SHIFTER_Y_sel <= SHIFTER_Y_ir_sh;
                     cmd.SHIFTER_op <= SHIFT_ll;
+                elsif state_q = S_SRLI then
+                    -- rd <- srli(rs1,shamt)
+                    cmd.SHIFTER_Y_sel <= SHIFTER_Y_ir_sh;
+                    cmd.SHIFTER_op <= SHIFT_rl;
+                elsif state_q = S_SRAI then
+                    -- rd <- srai(rs1,shamt)
+                    cmd.SHIFTER_Y_sel <= SHIFTER_Y_ir_sh;
+                    cmd.SHIFTER_op <= SHIFT_ra;
                 end if;
                 cmd.DATA_sel <= DATA_from_shifter;
                 cmd.RF_we <= '1';
