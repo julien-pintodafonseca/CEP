@@ -39,7 +39,8 @@ architecture RTL of CPU_PC is
         S_XOR,
         S_SUB,
         S_AUIPC,
-        S_SLL
+        S_SLL,
+        S_SRL
     );
 
     signal state_d, state_q : State_type;
@@ -188,6 +189,9 @@ begin
                             when "001" =>
                                 -- SLL
                                 state_d <= S_SLL;
+                            when "101" =>
+                                -- SRL
+                                state_d <= S_SRL;
                             when others =>
                                 -- Pour détecter les ratés du décodage
                                 state_d <= S_Error;
@@ -290,10 +294,16 @@ begin
                 -- next state
                 state_d <= S_Fetch;
             
-            when S_SLL =>
-                -- rd <- sll(rs1,rs2)
-                cmd.SHIFTER_Y_sel <= SHIFTER_Y_rs2;
-                cmd.SHIFTER_op <= SHIFT_ll;
+            when S_SLL | S_SRL =>
+                if state_q = S_SLL then
+                    -- rd <- sll(rs1,rs2)
+                    cmd.SHIFTER_Y_sel <= SHIFTER_Y_rs2;
+                    cmd.SHIFTER_op <= SHIFT_ll;
+                elsif state_q = S_SRL then
+                    -- rd <- srl(rs1,rs2)
+                    cmd.SHIFTER_Y_sel <= SHIFTER_Y_rs2;
+                    cmd.SHIFTER_op <= SHIFT_rl;
+                end if;
                 cmd.DATA_sel <= DATA_from_shifter;
                 cmd.RF_we <= '1';
                 -- lecture mem[PC]
