@@ -25,7 +25,7 @@ architecture RTL of CPU_CND is
 
 begin
     -- extension de signe
-    cond1_sign <= not(IR(12) and IR(6));
+    cond1_sign <= not(IR(12)) and not(IR(6));
     cond2_sign <= IR(6) and not(IR(13));
     ext_sign <= cond1_sign or cond2_sign;
 
