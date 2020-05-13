@@ -47,7 +47,8 @@ architecture RTL of CPU_PC is
         S_SRAI,
         S_BEQ,
         S_BNE,
-        S_BLT
+        S_BLT,
+        S_BGE
     );
 
     signal state_d, state_q : State_type;
@@ -238,6 +239,9 @@ begin
                             when "100" =>
                                 -- BLT
                                 state_d <= S_BLT;
+                            when "101" =>
+                                -- BGE
+                                state_d <= S_BGE;
                             when others =>
                                 -- Pour détecter les ratés du décodage
                                 state_d <= S_Error;
@@ -376,7 +380,7 @@ begin
                 state_d <= S_Fetch;
 
             ---------- Instructions de saut ----------
-            when S_BEQ | S_BNE | S_BLT =>
+            when S_BEQ | S_BNE | S_BLT | S_BGE =>
                 cmd.ALU_Y_sel <= ALU_Y_rf_rs2;
                 if status.jcond then
                     --- PC <- PC + immB
