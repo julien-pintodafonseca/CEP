@@ -6,8 +6,8 @@
 	sltu x31, x1, x2 # 42 < 92    / rd <- 0
 	sltu x31, x2, x1 # 92 >= 42   / rd <- 1
 	lui x3, 0xFFFFF
-	sltu x31, x3, x2 # (x1) >= 92 / rd <- 1
-	sltu x31, x2, x3 # 92 < (x1)  / rd <- 0
+	sltu x31, x3, x2 # (x3) >= 92 / rd <- 1
+	sltu x31, x2, x3 # 92 < (x3)  / rd <- 0
 
 	# max_cycle 50
 	# pout_start

@@ -53,7 +53,8 @@ architecture RTL of CPU_PC is
         S_BGEU,
         S_SLT,
         S_SLTU,
-        S_SLTI
+        S_SLTI,
+        S_SLTIU
     );
 
     signal state_d, state_q : State_type;
@@ -191,6 +192,9 @@ begin
                             when "010" =>
                                 -- SLTI
                                 state_d <= S_SLTI;
+                            when "011" =>
+                                -- SLTIU
+                                state_d <= S_SLTIU;
                             when others =>
                                 -- Pour détecter les ratés du décodage
                                 state_d <= S_Error;
@@ -403,11 +407,11 @@ begin
                 state_d <= S_Fetch;
 
             ---------- Instructions avec set ----------
-            when S_SLT | S_SLTU | S_SLTI =>
+            when S_SLT | S_SLTU | S_SLTI | S_SLTIU =>
                 if state_q = S_SLT OR state_q = S_SLTU then
                     -- rd <- slt(rs1,rs2)
                     cmd.ALU_Y_sel <= ALU_Y_rf_rs2;
-                elsif state_q = S_SLTI then
+                elsif state_q = S_SLTI OR state_q = S_SLTIU then
                     -- rd <- slti(rs1,immI)
                     cmd.ALU_Y_sel <= ALU_Y_immI;
                 end if;
