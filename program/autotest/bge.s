@@ -1,5 +1,5 @@
 # TAG = bge
-	.text
+    .text
 	addi x1, x0, -11
 	addi x31, x0, 9
 	bge x1, x31, goto_a # jcond invalide car -11 < 9

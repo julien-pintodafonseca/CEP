@@ -1,8 +1,8 @@
 # TAG = lui
-	.text
-	lui x31, 0       #Test chargement d'une valeur nulle
-	lui x31, 0xFFFFF #Test chargement d'une valeur maximal sur 20 bits
-	lui x31, 0x12345 #Test chargement d'une valeur quelconque
+    .text
+	lui x31, 0       # rd <- chargement d'une valeur nulle
+	lui x31, 0xFFFFF # rd <- chargement d'une valeur maximal sur 20 bits
+	lui x31, 0x12345 # rd <- chargement d'une valeur quelconque
 
 	# max_cycle 50
 	# pout_start

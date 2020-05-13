@@ -1,5 +1,5 @@
 # TAG = blt
-	.text
+    .text
 	addi x1, x0, -11
 	addi x31, x0, 9
 	blt x1, x31, goto_a # jcond valide car -11 < 9

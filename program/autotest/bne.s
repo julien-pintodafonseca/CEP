@@ -1,5 +1,5 @@
 # TAG = bne
-	.text
+    .text
 	addi x1, x0, 11
 	addi x31, x0, 12
 	bne x1, x31, goto_a # jcond valide car 11 != 12

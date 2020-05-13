@@ -1,5 +1,5 @@
 # TAG = beq
-	.text
+    .text
 	addi x1, x0, 11
 	addi x31, x0, 12
 	beq x1, x31, goto_a # jcond invalide car 11 != 12

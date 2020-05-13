@@ -1,5 +1,5 @@
 # TAG = bgeu
-	.text
+    .text
 	addi x1, x0, 11
 	addi x31, x0, 2042
 	bgeu x1, x31, goto_a # jcond invalide car 11 < 2042
