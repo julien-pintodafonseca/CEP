@@ -7,7 +7,7 @@
 goto_a:
 	addi x1, x0, -42
 	addi x31, x0, -42
-	bge x31, x1, goto_b # jcond valide car -42 >= -42
+	bge x1, x31, goto_b # jcond valide car -42 >= -42
 	addi x31, x0, 6
 goto_b:
 	addi x31, x0, 0
