@@ -50,7 +50,8 @@ architecture RTL of CPU_PC is
         S_BLT,
         S_BGE,
         S_BLTU,
-        S_BGEU
+        S_BGEU,
+        S_SLT
     );
 
     signal state_d, state_q : State_type;
@@ -226,6 +227,9 @@ begin
                                         -- Pour détecter les ratés du décodage
                                         state_d <= S_Error;
                                     end case;
+                            when "010" =>
+                                -- SLT
+                                state_d <= S_SLT;
                             when others =>
                                 -- Pour détecter les ratés du décodage
                                 state_d <= S_Error;
@@ -259,6 +263,32 @@ begin
                         state_d <= S_Error;
                 end case;
 
+            ---------- Instructions arithmétiques ----------
+            when S_ADDI | S_ADD | S_SUB =>
+                if state_q = S_ADDI then
+                    -- rd <- rs1 + immI
+                    cmd.ALU_Y_sel <= ALU_Y_immI;
+                    cmd.ALU_op <= ALU_plus;
+                    cmd.DATA_sel <= DATA_from_alu;
+                elsif state_q = S_ADD then
+                    -- rd <- rs1 + rs2
+                    cmd.ALU_Y_sel <= ALU_Y_rf_rs2;
+                    cmd.ALU_op <= ALU_plus;
+                    cmd.DATA_sel <= DATA_from_alu;
+                elsif state_q = S_SUB then
+                    -- rd <- rs1 - rs2
+                    cmd.ALU_Y_sel <= ALU_Y_rf_rs2;
+                    cmd.ALU_op <= ALU_minus;
+                    cmd.DATA_sel <= DATA_from_alu;
+                end if;
+                cmd.RF_we <= '1';
+                -- lecture mem[PC]
+                cmd.ADDR_sel <= ADDR_from_pc;
+                cmd.mem_we <= '0';
+                cmd.mem_ce <= '1';
+                -- next state
+                state_d <= S_Fetch;
+
             ---------- Instructions avec immediat de type U ----------
             when S_LUI =>
                 -- rd <- immU + 0
@@ -285,33 +315,8 @@ begin
                 cmd.PC_we <= '1';
                 -- next state
                 state_d <= S_Pre_Fetch;
-
-            ---------- Instructions arithmétiques et logiques ----------
-            when S_ADDI | S_ADD | S_SUB =>
-                if state_q = S_ADDI then
-                    -- rd <- rs1 + immI
-                    cmd.ALU_Y_sel <= ALU_Y_immI;
-                    cmd.ALU_op <= ALU_plus;
-                    cmd.DATA_sel <= DATA_from_alu;
-                elsif state_q = S_ADD then
-                    -- rd <- rs1 + rs2
-                    cmd.ALU_Y_sel <= ALU_Y_rf_rs2;
-                    cmd.ALU_op <= ALU_plus;
-                    cmd.DATA_sel <= DATA_from_alu;
-                elsif state_q = S_SUB then
-                    -- rd <- rs1 - rs2
-                    cmd.ALU_Y_sel <= ALU_Y_rf_rs2;
-                    cmd.ALU_op <= ALU_minus;
-                    cmd.DATA_sel <= DATA_from_alu;
-                end if;
-                cmd.RF_we <= '1';
-                -- lecture mem[PC]
-                cmd.ADDR_sel <= ADDR_from_pc;
-                cmd.mem_we <= '0';
-                cmd.mem_ce <= '1';
-                -- next state
-                state_d <= S_Fetch;
             
+            ---------- Instructions logiques ----------
             when S_ANDI | S_AND | S_ORI | S_OR | S_XORI | S_XOR =>
                 if state_q = S_ANDI then
                     -- rd <- rs1 and immI
@@ -352,6 +357,7 @@ begin
                 -- next state
                 state_d <= S_Fetch;
             
+            ---------- Instructions avec décalage ----------
             when S_SLL | S_SRL | S_SRA | S_SRAI | S_SLLI | S_SRLI =>
                 if state_q = S_SLL then
                     -- rd <- sll(rs1,rs2)
@@ -387,7 +393,20 @@ begin
                 -- next state
                 state_d <= S_Fetch;
 
-            ---------- Instructions de saut ----------
+            ---------- Instructions avec set ----------
+            when S_SLT =>
+                cmd.ALU_Y_sel <= ALU_Y_rf_rs2;
+                cmd.DATA_sel <= DATA_from_slt;
+                cmd.RF_we <= '1';
+                -- lecture mem[PC]
+                cmd.ADDR_sel <= ADDR_from_pc;
+                cmd.mem_we <= '0';
+                cmd.mem_ce <= '1';
+                -- next state
+                state_d <= S_Fetch;
+
+
+            ---------- Instructions de branchement ----------
             when S_BEQ | S_BNE | S_BLT | S_BGE | S_BLTU | S_BGEU =>
                 cmd.ALU_Y_sel <= ALU_Y_rf_rs2;
                 if status.jcond then
@@ -401,6 +420,8 @@ begin
                 cmd.PC_we <= '1';
                 -- next state
                 state_d <= S_Pre_Fetch;
+            
+            ---------- Instructions de saut ----------
 
             ---------- Instructions de chargement à partir de la mémoire ----------
 
