@@ -51,7 +51,8 @@ architecture RTL of CPU_PC is
         S_BGE,
         S_BLTU,
         S_BGEU,
-        S_SLT
+        S_SLT,
+        S_SLTI
     );
 
     signal state_d, state_q : State_type;
@@ -141,8 +142,9 @@ begin
                 state_d <= S_Decode;
 
             when S_Decode =>
+                --- Instruction /= (AUIPC, {instructions de branchement})
                 if (status.IR(6 downto 0) /= "0010111" AND status.IR(6 downto 0) /= "1100011") then
-                    --- PC <- PC + 4
+                    -- PC <- PC + 4
                     cmd.TO_PC_Y_sel <= To_PC_Y_cst_x04;
                     cmd.PC_sel <= PC_from_pc;
                     cmd.PC_we <= '1';
@@ -185,6 +187,9 @@ begin
                             when "001" =>
                                 -- SLLI
                                 state_d <= S_SLLI;
+                            when "010" =>
+                                -- SLTI
+                                state_d <= S_SLTI;
                             when others =>
                                 -- Pour détecter les ratés du décodage
                                 state_d <= S_Error;
@@ -309,7 +314,7 @@ begin
                 cmd.PC_Y_sel <= PC_Y_immU;
                 cmd.DATA_sel <= DATA_from_pc;
                 cmd.RF_we <= '1';
-                --- PC <- PC + 4
+                -- PC <- PC + 4
                 cmd.TO_PC_Y_sel <= To_PC_Y_cst_x04;
                 cmd.PC_sel <= PC_from_pc;
                 cmd.PC_we <= '1';
@@ -394,8 +399,14 @@ begin
                 state_d <= S_Fetch;
 
             ---------- Instructions avec set ----------
-            when S_SLT =>
-                cmd.ALU_Y_sel <= ALU_Y_rf_rs2;
+            when S_SLT | S_SLTI =>
+                if state_q = S_SLT then
+                    -- rd <- slt(rs1,rs2)
+                    cmd.ALU_Y_sel <= ALU_Y_rf_rs2;
+                elsif state_q = S_SLTI then
+                    -- rd <- slti(rs1,immI)
+                    cmd.ALU_Y_sel <= ALU_Y_immI;
+                end if;
                 cmd.DATA_sel <= DATA_from_slt;
                 cmd.RF_we <= '1';
                 -- lecture mem[PC]
@@ -410,10 +421,10 @@ begin
             when S_BEQ | S_BNE | S_BLT | S_BGE | S_BLTU | S_BGEU =>
                 cmd.ALU_Y_sel <= ALU_Y_rf_rs2;
                 if status.jcond then
-                    --- PC <- PC + immB
+                    -- PC <- PC + immB
                     cmd.TO_PC_Y_sel <= TO_PC_Y_immB;
                 else
-                    --- PC <- PC + 4
+                    -- PC <- PC + 4
                     cmd.TO_PC_Y_sel <= TO_PC_Y_cst_x04;
                 end if;
                 cmd.PC_sel <= PC_from_pc;
