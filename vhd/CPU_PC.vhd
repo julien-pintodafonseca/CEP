@@ -44,7 +44,8 @@ architecture RTL of CPU_PC is
         S_SRA,
         S_SLLI,
         S_SRLI,
-        S_SRAI
+        S_SRAI,
+        S_BEQ
     );
 
     signal state_d, state_q : State_type;
@@ -134,7 +135,7 @@ begin
                 state_d <= S_Decode;
 
             when S_Decode =>
-                if status.IR(6 downto 0) /= "0010111" then
+                if status.IR(6 downto 0) /= "0010111" AND status.IR(6 downto 0) /= "1100011" then
                     --- PC <- PC + 4
                     cmd.TO_PC_Y_sel <= To_PC_Y_cst_x04;
                     cmd.PC_sel <= PC_from_pc;
@@ -224,6 +225,9 @@ begin
                                 -- Pour détecter les ratés du décodage
                                 state_d <= S_Error;
                         end case;
+                    when "1100011" =>
+                        -- BEQ
+                        state_d <= S_BEQ;
                     when others =>
                         -- Pour détecter les ratés du décodage
                         state_d <= S_Error;
@@ -358,6 +362,19 @@ begin
                 state_d <= S_Fetch;
 
             ---------- Instructions de saut ----------
+            when S_BEQ =>
+                cmd.ALU_Y_sel <= ALU_Y_rf_rs2;
+                if status.jcond then
+                    --- PC <- PC + immB
+                    cmd.TO_PC_Y_sel <= TO_PC_Y_immB;
+                else
+                    --- PC <- PC + 4
+                    cmd.TO_PC_Y_sel <= TO_PC_Y_cst_x04;
+                end if;
+                cmd.PC_sel <= PC_from_pc;
+                cmd.PC_we <= '1';
+                -- next state
+				state_d <= S_Pre_Fetch;
 
             ---------- Instructions de chargement à partir de la mémoire ----------
 
