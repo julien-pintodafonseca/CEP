@@ -1,5 +1,5 @@
 # TAG = bge
-    .text
+	.text
 	addi x1, x0, -11
 	addi x31, x0, 9
 	bge x1, x31, goto_a # jcond invalide car -11 < 9
@@ -12,10 +12,10 @@ goto_a:
 goto_b:
 	addi x31, x0, 0
 	
-    # max_cycle 50
-    # pout_start
-    # 00000009
-    # 00000001
-    # FFFFFFD6
-    # 00000000
-    # pout_end
+	# max_cycle 50
+	# pout_start
+	# 00000009
+	# 00000001
+	# FFFFFFD6
+	# 00000000
+	# pout_end
