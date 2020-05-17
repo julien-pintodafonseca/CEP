@@ -54,7 +54,10 @@ architecture RTL of CPU_PC is
         S_SLT,
         S_SLTU,
         S_SLTI,
-        S_SLTIU
+        S_SLTIU,
+        S_LW,
+        S_READ_MEM_AD,
+        S_LOAD_MEM_AD
     );
 
     signal state_d, state_q : State_type;
@@ -127,15 +130,15 @@ begin
 
             when S_Init =>
                 -- PC <- RESET_VECTOR
-                cmd.PC_we <= '1';
                 cmd.PC_sel <= PC_rstvec;
+                cmd.PC_we <= '1';
                 state_d <= S_Pre_Fetch;
 
             when S_Pre_Fetch =>
-                -- mem[PC]
+                -- lecture mem[PC]
+                cmd.ADDR_sel <= ADDR_from_pc;
                 cmd.mem_we <= '0';
                 cmd.mem_ce <= '1';
-                cmd.ADDR_sel <= ADDR_from_pc;
                 state_d <= S_Fetch;
 
             when S_Fetch =>
@@ -271,6 +274,15 @@ begin
                                 -- Pour détecter les ratés du décodage
                                 state_d <= S_Error;
                         end case;
+                    when "0000011" =>
+                        case status.IR(14 downto 12) is
+                            when "010" =>
+                                -- LW
+                                state_d <= S_LW;
+                            when others =>
+                                -- Pour détecter les ratés du décodage
+                                state_d <= S_Error;
+                        end case;
                     when others =>
                         -- Pour détecter les ratés du décodage
                         state_d <= S_Error;
@@ -299,7 +311,7 @@ begin
                 cmd.ADDR_sel <= ADDR_from_pc;
                 cmd.mem_we <= '0';
                 cmd.mem_ce <= '1';
-                -- next state
+                -- prochain état
                 state_d <= S_Fetch;
 
             ---------- Instructions avec immediat de type U ----------
@@ -313,7 +325,7 @@ begin
                 cmd.ADDR_sel <= ADDR_from_pc;
                 cmd.mem_we <= '0';
                 cmd.mem_ce <= '1';
-                -- next state
+                -- prochain état
                 state_d <= S_Fetch;
             
             when S_AUIPC =>
@@ -326,7 +338,7 @@ begin
                 cmd.TO_PC_Y_sel <= To_PC_Y_cst_x04;
                 cmd.PC_sel <= PC_from_pc;
                 cmd.PC_we <= '1';
-                -- next state
+                -- prochain état
                 state_d <= S_Pre_Fetch;
             
             ---------- Instructions logiques ----------
@@ -367,7 +379,7 @@ begin
                 cmd.ADDR_sel <= ADDR_from_pc;
                 cmd.mem_we <= '0';
                 cmd.mem_ce <= '1';
-                -- next state
+                -- prochain état
                 state_d <= S_Fetch;
             
             ---------- Instructions avec décalage ----------
@@ -403,7 +415,7 @@ begin
                 cmd.ADDR_sel <= ADDR_from_pc;
                 cmd.mem_we <= '0';
                 cmd.mem_ce <= '1';
-                -- next state
+                -- prochain état
                 state_d <= S_Fetch;
 
             ---------- Instructions avec set ----------
@@ -421,7 +433,7 @@ begin
                 cmd.ADDR_sel <= ADDR_from_pc;
                 cmd.mem_we <= '0';
                 cmd.mem_ce <= '1';
-                -- next state
+                -- prochain état
                 state_d <= S_Fetch;
 
 
@@ -437,12 +449,37 @@ begin
                 end if;
                 cmd.PC_sel <= PC_from_pc;
                 cmd.PC_we <= '1';
-                -- next state
+                -- prochain état
                 state_d <= S_Pre_Fetch;
             
             ---------- Instructions de saut ----------
 
             ---------- Instructions de chargement à partir de la mémoire ----------
+            when S_LW =>
+                -- AD <- immI + rs1
+                cmd.AD_Y_sel <= AD_Y_immI;
+                cmd.AD_we <= '1';
+                state_d <= S_READ_MEM_AD;
+            
+            when S_READ_MEM_AD =>
+                -- lecture mem[AD]
+                cmd.ADDR_sel <= ADDR_from_ad;
+                cmd.mem_we <= '0';
+                cmd.mem_ce <= '1';
+                state_d <= S_LOAD_MEM_AD;
+            
+            when S_LOAD_MEM_AD =>
+                -- rd <- mem[AD]
+                cmd.RF_SIZE_sel <= RF_SIZE_word;
+                cmd.RF_SIGN_enable <= '0';
+                cmd.DATA_sel <= DATA_from_mem;
+                CMD.RF_we <= '1';
+                -- lecture mem[PC]
+                cmd.ADDR_sel <= ADDR_from_pc;
+                cmd.mem_we <= '0';
+                cmd.mem_ce <= '1';
+                -- prochain état
+                state_d <= S_Fetch;
 
             ---------- Instructions de sauvegarde en mémoire ----------
 
