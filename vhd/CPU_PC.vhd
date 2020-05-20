@@ -56,6 +56,7 @@ architecture RTL of CPU_PC is
         S_SLTI,
         S_SLTIU,
         S_LW,
+        S_LB,
         S_READ_MEM_AD,
         S_LOAD_MEM_AD,
         S_SW,
@@ -281,6 +282,9 @@ begin
                             when "010" =>
                                 -- LW
                                 state_d <= S_LW;
+                            when "000" =>
+                                -- LB
+                                state_d <= S_LB;
                             when others =>
                                 -- Pour détecter les ratés du décodage
                                 state_d <= S_Error;
@@ -466,7 +470,7 @@ begin
             ---------- Instructions de saut ----------
 
             ---------- Instructions de chargement à partir de la mémoire ----------
-            when S_LW =>
+            when S_LW | S_LB =>
                 -- AD <- immI + rs1
                 cmd.AD_Y_sel <= AD_Y_immI;
                 cmd.AD_we <= '1';
@@ -481,9 +485,14 @@ begin
             
             when S_LOAD_MEM_AD =>
                 -- rd <- mem[AD]
-                cmd.RF_SIZE_sel <= RF_SIZE_word;
-                cmd.RF_SIGN_enable <= '0';
                 cmd.DATA_sel <= DATA_from_mem;
+                if status.IR(14 downto 12) = "010" then
+                    cmd.RF_SIZE_sel <= RF_SIZE_word;
+                    cmd.RF_SIGN_enable <= '0';
+                elsif status.IR(14 downto 12) = "000" then
+                    cmd.RF_SIZE_sel <= RF_SIZE_byte;
+                    cmd.RF_SIGN_enable <= '1';
+                end if;
                 CMD.RF_we <= '1';
                 -- lecture mem[PC]
                 cmd.ADDR_sel <= ADDR_from_pc;
@@ -501,9 +510,9 @@ begin
             
             when S_WRITE_MEM_AD =>
                 -- écriture mem[AD]
+                cmd.ADDR_sel <= ADDR_from_ad;
                 cmd.RF_SIZE_sel <= RF_SIZE_word;
                 cmd.RF_SIGN_enable <= '0';
-                cmd.ADDR_sel <= ADDR_from_ad;
                 cmd.mem_we <= '1';
                 cmd.mem_ce <= '1';
                 -- prochain état
