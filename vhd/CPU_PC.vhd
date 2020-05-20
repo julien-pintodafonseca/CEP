@@ -63,6 +63,7 @@ architecture RTL of CPU_PC is
         S_READ_MEM_AD,
         S_LOAD_MEM_AD,
         S_SW,
+        S_SB,
         S_WRITE_MEM_AD
     );
 
@@ -306,6 +307,9 @@ begin
                             when "010" =>
                                 -- SW
                                 state_d <= S_SW;
+                            when "000" =>
+                                -- SB
+                                state_d <= S_SB;
                             when others =>
                                 -- Pour détecter les ratés du décodage
                                 state_d <= S_Error;
@@ -523,7 +527,7 @@ begin
                 state_d <= S_Fetch;
 
             ---------- Instructions de sauvegarde en mémoire ----------
-            when S_SW =>
+            when S_SW | S_SB =>
                 -- cst <- immS + rs1
                 cmd.AD_Y_sel <= AD_Y_immS;
                 cmd.AD_we <= '1';
@@ -532,7 +536,11 @@ begin
             when S_WRITE_MEM_AD =>
                 -- écriture mem[AD]
                 cmd.ADDR_sel <= ADDR_from_ad;
-                cmd.RF_SIZE_sel <= RF_SIZE_word;
+                if status.IR(14 downto 12) = "010" then
+                    cmd.RF_SIZE_sel <= RF_SIZE_word;
+                elsif status.IR(14 downto 12) = "000" then
+                    cmd.RF_SIZE_sel <= RF_SIZE_byte;
+                end if;
                 cmd.RF_SIGN_enable <= '0';
                 cmd.mem_we <= '1';
                 cmd.mem_ce <= '1';
