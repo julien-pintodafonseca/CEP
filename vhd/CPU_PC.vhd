@@ -57,7 +57,9 @@ architecture RTL of CPU_PC is
         S_SLTIU,
         S_LW,
         S_READ_MEM_AD,
-        S_LOAD_MEM_AD
+        S_LOAD_MEM_AD,
+        S_SW,
+        S_WRITE_MEM_AD
     );
 
     signal state_d, state_q : State_type;
@@ -283,6 +285,15 @@ begin
                                 -- Pour détecter les ratés du décodage
                                 state_d <= S_Error;
                         end case;
+                    when "0100011" =>
+                        case status.IR(14 downto 12) is
+                            when "010" =>
+                                -- SW
+                                state_d <= S_SW;
+                            when others =>
+                                -- Pour détecter les ratés du décodage
+                                state_d <= S_Error;
+                        end case;
                     when others =>
                         -- Pour détecter les ratés du décodage
                         state_d <= S_Error;
@@ -482,6 +493,21 @@ begin
                 state_d <= S_Fetch;
 
             ---------- Instructions de sauvegarde en mémoire ----------
+            when S_SW =>
+                -- cst <- immS + rs1
+                cmd.AD_Y_sel <= AD_Y_immS;
+                cmd.AD_we <= '1';
+                state_d <= S_WRITE_MEM_AD;
+            
+            when S_WRITE_MEM_AD =>
+                -- écriture mem[AD]
+                cmd.RF_SIZE_sel <= RF_SIZE_word;
+                cmd.RF_SIGN_enable <= '0';
+                cmd.ADDR_sel <= ADDR_from_ad;
+                cmd.mem_we <= '1';
+                cmd.mem_ce <= '1';
+                -- prochain état
+                state_d <= S_Pre_Fetch;
 
             ---------- Instructions d'accès aux CSR ----------
 
