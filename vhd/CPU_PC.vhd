@@ -59,6 +59,7 @@ architecture RTL of CPU_PC is
         S_LB,
         S_LBU,
         S_LH,
+        S_LHU,
         S_READ_MEM_AD,
         S_LOAD_MEM_AD,
         S_SW,
@@ -293,6 +294,9 @@ begin
                             when "001" =>
                                 -- LH
                                 state_d <= S_LH;
+                            when "101" =>
+                                -- LHU
+                                state_d <= S_LHU;
                             when others =>
                                 -- Pour détecter les ratés du décodage
                                 state_d <= S_Error;
@@ -478,7 +482,7 @@ begin
             ---------- Instructions de saut ----------
 
             ---------- Instructions de chargement à partir de la mémoire ----------
-            when S_LW | S_LB | S_LBU | S_LH =>
+            when S_LW | S_LB | S_LBU | S_LH | S_LHU =>
                 -- AD <- immI + rs1
                 cmd.AD_Y_sel <= AD_Y_immI;
                 cmd.AD_we <= '1';
@@ -506,6 +510,9 @@ begin
                 elsif status.IR(14 downto 12) = "001" then
                     cmd.RF_SIZE_sel <= RF_SIZE_half;
                     cmd.RF_SIGN_enable <= '1';
+                elsif status.IR(14 downto 12) = "101" then
+                    cmd.RF_SIZE_sel <= RF_SIZE_half;
+                    cmd.RF_SIGN_enable <= '0';
                 end if;
                 CMD.RF_we <= '1';
                 -- lecture mem[PC]
