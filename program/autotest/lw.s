@@ -1,14 +1,14 @@
 # TAG = lw
     .text
-        lui   x1, %hi(var1)     # x1 <- 0x?????000
-        addi  x1, x1, %lo(var1) # x1 <- addr[var1]
-        lw   x31, 0(x1)         # rd <- mem[addr[var1]]
-        lw   x31, 4(x1)         # rd <- mem[addr[var2]] / addr[var1] + 4 = addr[var2]
-        addi  x1, x1, 4         # x1 <- addr[var2]      / addr[var1] + 4 = addr[var2]
-        lw   x31, 0(x1)         # rd <- mem[addr[var2]]
-        lw   x31, -4(x1)        # rd <- mem[addr[var1]] / addr[var2] - 4 = addr[var1]
-        lw   x31, 4(x1)         # rd <- mem[addr[var3]] / addr[var2] + 4 = addr[var3]
-        lw   x31, 8(x1)         # rd <- mem[addr[var4]] / addr[var2] + 8 = addr[var4]
+        lui  x1, %hi(var1)     # x1 <- 0x?????000
+        addi x1, x1, %lo(var1) # x1 <- addr[var1]
+        lw  x31, 0(x1)         # rd <- mem[addr[var1]]
+        lw  x31, 4(x1)         # rd <- mem[addr[var2]] / addr[var1] + 4 = addr[var2]
+        addi x1, x1, 4         # x1 <- addr[var2]      / addr[var1] + 4 = addr[var2]
+        lw  x31, 0(x1)         # rd <- mem[addr[var2]]
+        lw  x31, -4(x1)        # rd <- mem[addr[var1]] / addr[var2] - 4 = addr[var1]
+        lw  x31, 4(x1)         # rd <- mem[addr[var3]] / addr[var2] + 4 = addr[var3]
+        lw  x31, 8(x1)         # rd <- mem[addr[var4]] / addr[var2] + 8 = addr[var4]
 
     .data
         var1: .word 0x11111111
