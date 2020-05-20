@@ -65,7 +65,8 @@ architecture RTL of CPU_PC is
         S_SW,
         S_SB,
         S_SH,
-        S_WRITE_MEM_AD
+        S_WRITE_MEM_AD,
+        S_JAL
     );
 
     signal state_d, state_q : State_type;
@@ -155,10 +156,11 @@ begin
                 state_d <= S_Decode;
 
             when S_Decode =>
-                --- Instruction /= (AUIPC, {instructions de branchement})
-                if (status.IR(6 downto 0) /= "0010111" AND status.IR(6 downto 0) /= "1100011") then
+                --- Instruction /= (AUIPC, {instructions de branchement}, JAL)
+                if (status.IR(6 downto 0) /= "0010111" AND status.IR(6 downto 0) /= "1100011" 
+                    AND status.IR(6 downto 0) /= "1101111") then
                     -- PC <- PC + 4
-                    cmd.TO_PC_Y_sel <= To_PC_Y_cst_x04;
+                    cmd.TO_PC_Y_sel <= TO_PC_Y_cst_x04;
                     cmd.PC_sel <= PC_from_pc;
                     cmd.PC_we <= '1';
                 end if;
@@ -318,6 +320,9 @@ begin
                                 -- Pour détecter les ratés du décodage
                                 state_d <= S_Error;
                         end case;
+                    when "1101111" =>
+                        -- JAL
+                        state_d <= S_JAL;
                     when others =>
                         -- Pour détecter les ratés du décodage
                         state_d <= S_Error;
@@ -488,6 +493,19 @@ begin
                 state_d <= S_Pre_Fetch;
             
             ---------- Instructions de saut ----------
+            when S_JAL =>
+                -- rd <- PC + 4
+                cmd.PC_X_sel <= PC_X_pc;
+                cmd.PC_Y_sel <= PC_Y_cst_x04;
+                cmd.DATA_sel <= DATA_from_pc;
+                cmd.RF_we <= '1';
+                -- PC <- PC + immJ
+                cmd.TO_PC_Y_sel <= TO_PC_Y_immJ;
+                cmd.PC_sel <= PC_from_pc;
+                cmd.PC_we <= '1';
+                -- prochain état
+                state_d <= S_Pre_Fetch;
+                
 
             ---------- Instructions de chargement à partir de la mémoire ----------
             when S_LW | S_LB | S_LBU | S_LH | S_LHU =>
@@ -532,7 +550,7 @@ begin
 
             ---------- Instructions de sauvegarde en mémoire ----------
             when S_SW | S_SB | S_SH =>
-                -- cst <- immS + rs1
+                -- AD <- immS + rs1
                 cmd.AD_Y_sel <= AD_Y_immS;
                 cmd.AD_we <= '1';
                 state_d <= S_WRITE_MEM_AD;
