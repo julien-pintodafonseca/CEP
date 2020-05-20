@@ -66,7 +66,8 @@ architecture RTL of CPU_PC is
         S_SB,
         S_SH,
         S_WRITE_MEM_AD,
-        S_JAL
+        S_JAL,
+        S_JALR
     );
 
     signal state_d, state_q : State_type;
@@ -156,9 +157,9 @@ begin
                 state_d <= S_Decode;
 
             when S_Decode =>
-                --- Instruction /= (AUIPC, {instructions de branchement}, JAL)
+                --- Si Instruction /= {AUIPC, {instructions de branchement}, JAL, JALR}
                 if (status.IR(6 downto 0) /= "0010111" AND status.IR(6 downto 0) /= "1100011" 
-                    AND status.IR(6 downto 0) /= "1101111") then
+                    AND status.IR(6 downto 0) /= "1101111" AND status.IR(6 downto 0) /= "1100111") then
                     -- PC <- PC + 4
                     cmd.TO_PC_Y_sel <= TO_PC_Y_cst_x04;
                     cmd.PC_sel <= PC_from_pc;
@@ -323,6 +324,9 @@ begin
                     when "1101111" =>
                         -- JAL
                         state_d <= S_JAL;
+                    when "1100111" =>
+                        -- JALR
+                        state_d <= S_JALR;
                     when others =>
                         -- Pour détecter les ratés du décodage
                         state_d <= S_Error;
@@ -493,15 +497,22 @@ begin
                 state_d <= S_Pre_Fetch;
             
             ---------- Instructions de saut ----------
-            when S_JAL =>
+            when S_JAL | S_JALR =>
                 -- rd <- PC + 4
                 cmd.PC_X_sel <= PC_X_pc;
                 cmd.PC_Y_sel <= PC_Y_cst_x04;
                 cmd.DATA_sel <= DATA_from_pc;
                 cmd.RF_we <= '1';
-                -- PC <- PC + immJ
-                cmd.TO_PC_Y_sel <= TO_PC_Y_immJ;
-                cmd.PC_sel <= PC_from_pc;
+                if state_q = S_JAL then
+                    -- PC <- PC + immJ
+                    cmd.TO_PC_Y_sel <= TO_PC_Y_immJ;
+                    cmd.PC_sel <= PC_from_pc;
+                elsif state_q = S_JALR then
+                    -- PC <- rs1 + immI
+                    cmd.ALU_Y_sel <= ALU_Y_immI;
+                    cmd.ALU_op <= ALU_plus;
+                    cmd.PC_sel <= PC_from_alu;
+                end if;
                 cmd.PC_we <= '1';
                 -- prochain état
                 state_d <= S_Pre_Fetch;
