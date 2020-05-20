@@ -30,4 +30,5 @@ SLTIU
 LW
 LB
 LBU
+LH
 SW
