@@ -60,14 +60,15 @@ architecture RTL of CPU_PC is
         S_LBU,
         S_LH,
         S_LHU,
-        S_READ_MEM_AD,
-        S_LOAD_MEM_AD,
+        S_Read_Mem_AD,
+        S_Load_Mem_AD,
         S_SW,
         S_SB,
         S_SH,
-        S_WRITE_MEM_AD,
+        S_Write_Mem_AD,
         S_JAL,
-        S_JALR
+        S_JALR,
+        S_Interrupt
     );
 
     signal state_d, state_q : State_type;
@@ -134,14 +135,15 @@ begin
 
         case state_q is
             when S_Error =>
-                -- Etat transitoire en cas d'instruction non reconnue 
-                -- Aucune action
+                --- Etat transitoire en cas d'instruction non reconnue 
+                -- aucune action
                 state_d <= S_Init;
 
             when S_Init =>
                 -- PC <- RESET_VECTOR
                 cmd.PC_sel <= PC_rstvec;
                 cmd.PC_we <= '1';
+                -- prochain état
                 state_d <= S_Pre_Fetch;
 
             when S_Pre_Fetch =>
@@ -149,12 +151,21 @@ begin
                 cmd.ADDR_sel <= ADDR_from_pc;
                 cmd.mem_we <= '0';
                 cmd.mem_ce <= '1';
+                -- prochain état
                 state_d <= S_Fetch;
 
             when S_Fetch =>
                 -- IR <- mem_datain
                 cmd.IR_we <= '1';
-                state_d <= S_Decode;
+
+                --- Changement d'état
+                if status.IT then
+                    -- Interrupt
+                    state_d <= S_Interrupt;
+                else
+                    -- Decode
+                    state_d <= S_Decode;
+                end if;
 
             when S_Decode =>
                 --- Si l'instruction est différente de {AUIPC, {Instructions de branchement}, JAL, JALR}
@@ -166,7 +177,7 @@ begin
                     cmd.PC_we <= '1';
                 end if;
 
-                --- Changement d'etat
+                --- Changement d'état
                 case status.IR(6 downto 0) is
                     when "0000011" =>
                         case status.IR(14 downto 12) is
@@ -544,16 +555,16 @@ begin
                 -- AD <- immI + rs1
                 cmd.AD_Y_sel <= AD_Y_immI;
                 cmd.AD_we <= '1';
-                state_d <= S_READ_MEM_AD;
+                state_d <= S_Read_Mem_AD;
                 
-            when S_READ_MEM_AD =>
+            when S_Read_Mem_AD =>
                 -- lecture mem[AD]
                 cmd.ADDR_sel <= ADDR_from_ad;
                 cmd.mem_we <= '0';
                 cmd.mem_ce <= '1';
-                state_d <= S_LOAD_MEM_AD;
+                state_d <= S_Load_Mem_AD;
                 
-            when S_LOAD_MEM_AD =>
+            when S_Load_Mem_AD =>
                 -- rd <- mem[AD]
                 cmd.DATA_sel <= DATA_from_mem;
                 if status.IR(14 downto 12) = "010" then
@@ -585,9 +596,9 @@ begin
                 -- AD <- immS + rs1
                 cmd.AD_Y_sel <= AD_Y_immS;
                 cmd.AD_we <= '1';
-                state_d <= S_WRITE_MEM_AD;
+                state_d <= S_Write_Mem_AD;
                 
-            when S_WRITE_MEM_AD =>
+            when S_Write_Mem_AD =>
                 -- écriture mem[AD]
                 cmd.ADDR_sel <= ADDR_from_ad;
                 if status.IR(14 downto 12) = "010" then
@@ -604,7 +615,17 @@ begin
                 state_d <= S_Pre_Fetch;
 
             ---------- Instructions d'accès aux CSR ----------
-            --- TODO
+            when S_Interrupt =>
+                -- MEPC <- PC
+                cmd.cs.MEPC_sel <= MEPC_from_pc;
+                cmd.cs.CSR_we <= CSR_mepc;
+                -- mstatus[MIE] <- 0
+                cmd.cs.MSTATUS_mie_reset <= '1';
+                -- PC <- MTVEC
+                cmd.PC_sel <= PC_mtvec;
+                cmd.PC_we <= '1';
+                -- prochain état
+                state_d <= S_Pre_Fetch;
 
             when others => null;
         end case;
