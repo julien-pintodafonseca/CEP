@@ -68,7 +68,8 @@ architecture RTL of CPU_PC is
         S_Write_Mem_AD,
         S_JAL,
         S_JALR,
-        S_Interrupt
+        S_Interrupt,
+        S_MRET
     );
 
     signal state_d, state_q : State_type;
@@ -359,6 +360,16 @@ begin
                         -- JAL
                         state_d <= S_JAL;
 
+                    when "1110011" =>
+                        case status.IR(14 downto 12) is
+                            when "000" =>
+                                -- MRET
+                                state_d <= S_MRET;
+                            when others =>
+                                -- Pour détecter les ratés du décodage
+                                state_d <= S_Error;
+                        end case;
+
                     when others =>
                         -- Pour détecter les ratés du décodage
                         state_d <= S_Error;
@@ -624,6 +635,15 @@ begin
                 -- PC <- MTVEC
                 cmd.PC_sel <= PC_mtvec;
                 cmd.PC_we <= '1';
+                -- prochain état
+                state_d <= S_Pre_Fetch;
+            
+            when S_MRET =>
+                -- PC <- MEPC
+                cmd.PC_sel <= PC_from_mepc;
+                cmd.PC_we <= '1';
+                -- mstatus[MIE] <- 1
+                cmd.cs.MSTATUS_mie_set <= '1';
                 -- prochain état
                 state_d <= S_Pre_Fetch;
 
