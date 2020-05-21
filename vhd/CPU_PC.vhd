@@ -69,7 +69,8 @@ architecture RTL of CPU_PC is
         S_JAL,
         S_JALR,
         S_Interrupt,
-        S_MRET
+        S_MRET,
+        S_CSRRW
     );
 
     signal state_d, state_q : State_type;
@@ -365,6 +366,9 @@ begin
                             when "000" =>
                                 -- MRET
                                 state_d <= S_MRET;
+                            when "001" =>
+                                -- CSRRW
+                                state_d <= S_CSRRW;
                             when others =>
                                 -- Pour détecter les ratés du décodage
                                 state_d <= S_Error;
@@ -414,7 +418,7 @@ begin
                 cmd.mem_ce <= '1';
                 -- prochain état
                 state_d <= S_Fetch;
-
+                
             when S_AUIPC =>
                 -- rd <- immU + pc
                 cmd.PC_X_sel <= PC_X_pc;
@@ -427,7 +431,7 @@ begin
                 cmd.PC_we <= '1';
                 -- prochain état
                 state_d <= S_Pre_Fetch;
-            
+
             ---------- Instructions logiques ----------
             when S_ANDI | S_AND | S_ORI | S_OR | S_XORI | S_XOR =>
                 if state_q = S_ANDI then
@@ -468,7 +472,7 @@ begin
                 cmd.mem_ce <= '1';
                 -- prochain état
                 state_d <= S_Fetch;
-            
+
             ---------- Instructions avec décalage ----------
             when S_SLL | S_SRL | S_SRA | S_SRAI | S_SLLI | S_SRLI =>
                 if state_q = S_SLL then
@@ -523,7 +527,6 @@ begin
                 -- prochain état
                 state_d <= S_Fetch;
 
-
             ---------- Instructions de branchement ----------
             when S_BEQ | S_BNE | S_BLT | S_BGE | S_BLTU | S_BGEU =>
                 cmd.ALU_Y_sel <= ALU_Y_rf_rs2;
@@ -538,7 +541,7 @@ begin
                 cmd.PC_we <= '1';
                 -- prochain état
                 state_d <= S_Pre_Fetch;
-            
+
             ---------- Instructions de saut ----------
             when S_JAL | S_JALR =>
                 -- rd <- PC + 4
@@ -559,7 +562,6 @@ begin
                 cmd.PC_we <= '1';
                 -- prochain état
                 state_d <= S_Pre_Fetch;
-                
 
             ---------- Instructions de chargement à partir de la mémoire ----------
             when S_LW | S_LB | S_LBU | S_LH | S_LHU =>
@@ -637,13 +639,22 @@ begin
                 cmd.PC_we <= '1';
                 -- prochain état
                 state_d <= S_Pre_Fetch;
-            
+                
             when S_MRET =>
                 -- PC <- MEPC
                 cmd.PC_sel <= PC_from_mepc;
                 cmd.PC_we <= '1';
                 -- mstatus[MIE] <- 1
                 cmd.cs.MSTATUS_mie_set <= '1';
+                -- prochain état
+                state_d <= S_Pre_Fetch;
+                
+            when S_CSRRW =>
+                -- rd <- CSR
+                cmd.DATA_sel <= DATA_from_csr;
+                cmd.RF_we <= '1';
+                -- CSR <- rs1
+                cmd.cs.CSR_WRITE_mode <= WRITE_mode_simple;
                 -- prochain état
                 state_d <= S_Pre_Fetch;
 
