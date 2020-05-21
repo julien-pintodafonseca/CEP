@@ -53,5 +53,51 @@ architecture RTL of CPU_CSR is
         return res;
     end CSR_write;
 
+    -- Variables
+    signal TO_CSR : w32;
+    signal mstatus : w32;
+
 begin
+    -- Registres
+    registers : process (all)
+    begin
+        -- Gestion TO_CSR_sel
+        if cmd.TO_CSR_Sel = TO_CSR_from_rs1 then
+            TO_CSR <= rs1;
+        elsif cmd.TO_CSR_Sel = TO_CSR_from_imm then
+            TO_CSR <= imm;
+        end if;
+
+        -- Gestion CSR_sel
+        if cmd.CSR_sel = CSR_from_mcause then
+            csr <= mcause;
+        elsif cmd.CSR_sel = CSR_from_mip then
+            -- csr <= mip;
+        elsif cmd.CSR_sel = CSR_from_mie then
+            -- csr <= mie;
+        elsif cmd.CSR_sel = CSR_from_mstatus then
+            csr <= mstatus;
+        elsif cmd.CSR_sel = CSR_from_mtvec then
+            -- csr <= mtvec;
+        elsif cmd.CSR_sel = CSR_from_mepc then
+            -- csr <= mepc;
+        end if;
+
+        -- mstatus[MIE] <- 0
+        if cmd.MSTATUS_mie_reset = '1' then
+            mstatus(3) <= '0';
+        end if;
+
+        -- mstatus[MIE] <- 1
+        if cmd.MSTATUS_mie_set = '1' then
+            mstatus(3) <= '1';
+        end if;
+
+        -- Interruption timer
+        mip(7) <= mtip;
+        -- Interruption externe
+        mip(11) <= meip;
+    end process registers;
+
+    it <= irq AND mstatus(3);
 end architecture;
