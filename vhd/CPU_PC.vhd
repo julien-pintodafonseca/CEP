@@ -157,7 +157,7 @@ begin
                 state_d <= S_Decode;
 
             when S_Decode =>
-                --- Si Instruction /= {AUIPC, {instructions de branchement}, JAL, JALR}
+                --- Si l'instruction est différente de {AUIPC, {Instructions de branchement}, JAL, JALR}
                 if (status.IR(6 downto 0) /= "0010111" AND status.IR(6 downto 0) /= "1100011" 
                     AND status.IR(6 downto 0) /= "1101111" AND status.IR(6 downto 0) /= "1100111") then
                     -- PC <- PC + 4
@@ -168,23 +168,48 @@ begin
 
                 --- Changement d'etat
                 case status.IR(6 downto 0) is
-                    when "0110111" =>
-                        -- LUI
-                        state_d <= S_LUI;
-                    when "0010111" =>
-                        -- AUIPC
-                        state_d <= S_AUIPC;
+                    when "0000011" =>
+                        case status.IR(14 downto 12) is
+                            when "000" =>
+                                -- LB
+                                state_d <= S_LB;
+                            when "001" =>
+                                -- LH
+                                state_d <= S_LH;
+                            when "010" =>
+                                -- LW
+                                state_d <= S_LW;
+                            when "100" =>
+                                -- LBU
+                                state_d <= S_LBU;
+                            when "101" =>
+                                -- LHU
+                                state_d <= S_LHU;
+                            when others =>
+                                -- Pour détecter les ratés du décodage
+                                state_d <= S_Error;
+                        end case;
+
                     when "0010011" =>
                         case status.IR(14 downto 12) is
                             when "000" =>
                                 -- ADDI
                                 state_d <= S_ADDI;
-                            when "111" =>
-                                -- ANDI
-                                state_d <= S_ANDI;
-                            when "110" =>
-                                -- ORI
-                                state_d <= S_ORI;
+                            when "001" =>
+                                case status.IR(31 downto 25) is
+                                    when "0000000" =>
+                                        -- SLLI
+                                        state_d <= S_SLLI;
+                                    when others =>
+                                        -- Pour détecter les ratés du décodage
+                                        state_d <= S_Error;
+                                end case;
+                            when "010" =>
+                                -- SLTI
+                                state_d <= S_SLTI;
+                            when "011" =>
+                                -- SLTIU
+                                state_d <= S_SLTIU;
                             when "100" =>
                                 -- XORI
                                 state_d <= S_XORI;
@@ -199,68 +224,91 @@ begin
                                     when others =>
                                         -- Pour détecter les ratés du décodage
                                         state_d <= S_Error;
-                                    end case;
-                            when "001" =>
-                                -- SLLI
-                                state_d <= S_SLLI;
-                            when "010" =>
-                                -- SLTI
-                                state_d <= S_SLTI;
-                            when "011" =>
-                                -- SLTIU
-                                state_d <= S_SLTIU;
+                                end case;
+                            when "110" =>
+                                -- ORI
+                                state_d <= S_ORI;
+                            when "111" =>
+                                -- ANDI
+                                state_d <= S_ANDI;
                             when others =>
                                 -- Pour détecter les ratés du décodage
                                 state_d <= S_Error;
                         end case;
-                    when "0110011" =>
+
+                    when "0010111" =>
+                        -- AUIPC
+                        state_d <= S_AUIPC;
+
+                    when "0100011" =>
                         case status.IR(14 downto 12) is
                             when "000" =>
-                                case status.IR(31 downto 25) is
-                                    when "0000000" =>
+                                -- SB
+                                state_d <= S_SB;
+                            when "001" =>
+                                -- SH
+                                state_d <= S_SH;
+                            when "010" =>
+                                -- SW
+                                state_d <= S_SW;
+                            when others =>
+                                -- Pour détecter les ratés du décodage
+                                state_d <= S_Error;
+                        end case;
+
+                    when "0110011" =>
+                        case status.IR(31 downto 25) is
+                            when "0000000" =>
+                                case status.IR(14 downto 12) is
+                                    when "000" =>
                                         -- ADD
                                         state_d <= S_ADD;
-                                    when "0100000" =>
-                                        -- SUB
-                                        state_d <= S_SUB;
+                                    when "001" =>
+                                        -- SLL
+                                        state_d <= S_SLL;
+                                    when "010" =>
+                                        -- SLT
+                                        state_d <= S_SLT;
+                                    when "011" =>
+                                        -- SLTU
+                                        state_d <= S_SLTU;
+                                    when "100" =>
+                                        -- XOR
+                                        state_d <= S_XOR;
+                                    when "101" =>
+                                        -- SRL
+                                        state_d <= S_SRL;
+                                    when "110" =>
+                                        -- OR
+                                        state_d <= S_OR;
+                                    when "111" =>
+                                        -- AND
+                                        state_d <= S_AND;
                                     when others =>
                                         -- Pour détecter les ratés du décodage
                                         state_d <= S_Error;
-                                    end case;
-                            when "111" =>
-                                -- AND
-                                state_d <= S_AND;
-                            when "110" =>
-                                -- OR
-                                state_d <= S_OR;
-                            when "100" =>
-                                -- XOR
-                                state_d <= S_XOR;
-                            when "001" =>
-                                -- SLL
-                                state_d <= S_SLL;
-                            when "101" =>
-                                case status.IR(31 downto 25) is
-                                    when "0000000" =>
-                                        -- SRL
-                                        state_d <= S_SRL;
-                                    when "0100000" =>
+                                end case;
+                            when "0100000" =>
+                                case status.IR(14 downto 12) is
+                                    when "000" =>
+                                        -- SUB
+                                        state_d <= S_SUB;
+                                    when "101" =>
                                         -- SRA
                                         state_d <= S_SRA;
                                     when others =>
                                         -- Pour détecter les ratés du décodage
                                         state_d <= S_Error;
-                                    end case;
-                            when "010" =>
-                                -- SLT
-                                state_d <= S_SLT;
-                            when "011" =>
-                                -- SLTU
-                                state_d <= S_SLTU;
+                                end case;
                             when others =>
                                 -- Pour détecter les ratés du décodage
                                 state_d <= S_Error;
                         end case;
+
+                    when "0110111" =>
+                        -- LUI
+                        state_d <= S_LUI;
+
                     when "1100011" =>
                         case status.IR(14 downto 12) is
                             when "000" =>
@@ -285,48 +333,21 @@ begin
                                 -- Pour détecter les ratés du décodage
                                 state_d <= S_Error;
                         end case;
-                    when "0000011" =>
+
+                    when "1100111" =>
                         case status.IR(14 downto 12) is
-                            when "010" =>
-                                -- LW
-                                state_d <= S_LW;
                             when "000" =>
-                                -- LB
-                                state_d <= S_LB;
-                            when "100" =>
-                                -- LBU
-                                state_d <= S_LBU;
-                            when "001" =>
-                                -- LH
-                                state_d <= S_LH;
-                            when "101" =>
-                                -- LHU
-                                state_d <= S_LHU;
+                                -- JALR
+                                state_d <= S_JALR;
                             when others =>
                                 -- Pour détecter les ratés du décodage
                                 state_d <= S_Error;
                         end case;
-                    when "0100011" =>
-                        case status.IR(14 downto 12) is
-                            when "010" =>
-                                -- SW
-                                state_d <= S_SW;
-                            when "000" =>
-                                -- SB
-                                state_d <= S_SB;
-                            when "001" =>
-                                -- SH
-                                state_d <= S_SH;
-                            when others =>
-                                -- Pour détecter les ratés du décodage
-                                state_d <= S_Error;
-                        end case;
+
                     when "1101111" =>
                         -- JAL
                         state_d <= S_JAL;
-                    when "1100111" =>
-                        -- JALR
-                        state_d <= S_JALR;
+
                     when others =>
                         -- Pour détecter les ratés du décodage
                         state_d <= S_Error;
@@ -371,7 +392,7 @@ begin
                 cmd.mem_ce <= '1';
                 -- prochain état
                 state_d <= S_Fetch;
-            
+
             when S_AUIPC =>
                 -- rd <- immU + pc
                 cmd.PC_X_sel <= PC_X_pc;
@@ -524,14 +545,14 @@ begin
                 cmd.AD_Y_sel <= AD_Y_immI;
                 cmd.AD_we <= '1';
                 state_d <= S_READ_MEM_AD;
-            
+                
             when S_READ_MEM_AD =>
                 -- lecture mem[AD]
                 cmd.ADDR_sel <= ADDR_from_ad;
                 cmd.mem_we <= '0';
                 cmd.mem_ce <= '1';
                 state_d <= S_LOAD_MEM_AD;
-            
+                
             when S_LOAD_MEM_AD =>
                 -- rd <- mem[AD]
                 cmd.DATA_sel <= DATA_from_mem;
@@ -565,7 +586,7 @@ begin
                 cmd.AD_Y_sel <= AD_Y_immS;
                 cmd.AD_we <= '1';
                 state_d <= S_WRITE_MEM_AD;
-            
+                
             when S_WRITE_MEM_AD =>
                 -- écriture mem[AD]
                 cmd.ADDR_sel <= ADDR_from_ad;
@@ -583,6 +604,7 @@ begin
                 state_d <= S_Pre_Fetch;
 
             ---------- Instructions d'accès aux CSR ----------
+            --- TODO
 
             when others => null;
         end case;
