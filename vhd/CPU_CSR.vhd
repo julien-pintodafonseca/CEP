@@ -133,7 +133,7 @@ begin
         end if;
 
         -- Gestion mtvec
-        if cmd.CSR_we = CSR_mstatus then
+        if cmd.CSR_we = CSR_mtvec then
             mtvec_d <= CSR_write(TO_CSR, mtvec_q, cmd.CSR_WRITE_mode);
         end if;
 
