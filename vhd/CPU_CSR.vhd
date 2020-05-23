@@ -135,6 +135,8 @@ begin
         -- Gestion mtvec
         if cmd.CSR_we = CSR_mtvec then
             mtvec_d <= CSR_write(TO_CSR, mtvec_q, cmd.CSR_WRITE_mode);
+            mtvec_d(0) <= '0';
+            mtvec_d(1) <= '0';
         end if;
 
         -- Gestion mepc
@@ -144,6 +146,8 @@ begin
             elsif cmd.MEPC_sel = MEPC_from_csr then
                 mepc_d <= CSR_write(TO_CSR, mepc_q, cmd.CSR_WRITE_mode);
             end if;
+            mepc_d(0) <= '0';
+            mepc_d(1) <= '0';
         end if;
 
         -- Selection CSR_sel / Gestion sortie csr
