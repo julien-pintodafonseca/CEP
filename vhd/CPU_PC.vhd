@@ -80,7 +80,6 @@ architecture RTL of CPU_PC is
 
     signal state_d, state_q : State_type;
 
-
 begin
 
     FSM_synchrone : process (clk)
@@ -606,19 +605,24 @@ begin
                 -- rd <- mem[AD]
                 cmd.DATA_sel <= DATA_from_mem;
                 -- on vérifie l'état
-                if status.IR(14 downto 12) = "010" then
-                    cmd.RF_SIZE_sel <= RF_SIZE_word;
-                    cmd.RF_SIGN_enable <= '0';
-                elsif status.IR(14 downto 12) = "000" then
+                if status.IR(14 downto 12) = "000" then
+                    --- LB
                     cmd.RF_SIZE_sel <= RF_SIZE_byte;
                     cmd.RF_SIGN_enable <= '1';
-                elsif status.IR(14 downto 12) = "100" then
-                    cmd.RF_SIZE_sel <= RF_SIZE_byte;
-                    cmd.RF_SIGN_enable <= '0';
                 elsif status.IR(14 downto 12) = "001" then
+                    --- LH
                     cmd.RF_SIZE_sel <= RF_SIZE_half;
                     cmd.RF_SIGN_enable <= '1';
+                elsif status.IR(14 downto 12) = "010" then
+                    --- LW
+                    cmd.RF_SIZE_sel <= RF_SIZE_word;
+                    cmd.RF_SIGN_enable <= '0';
+                elsif status.IR(14 downto 12) = "100" then
+                    --- LBU
+                    cmd.RF_SIZE_sel <= RF_SIZE_byte;
+                    cmd.RF_SIGN_enable <= '0';
                 elsif status.IR(14 downto 12) = "101" then
+                    --- LHU
                     cmd.RF_SIZE_sel <= RF_SIZE_half;
                     cmd.RF_SIGN_enable <= '0';
                 end if;
@@ -641,12 +645,15 @@ begin
                 -- écriture mem[AD]
                 cmd.ADDR_sel <= ADDR_from_ad;
                 -- on vérifie l'état
-                if status.IR(14 downto 12) = "010" then
-                    cmd.RF_SIZE_sel <= RF_SIZE_word;
-                elsif status.IR(14 downto 12) = "000" then
+                if status.IR(14 downto 12) = "000" then
+                    --- SB
                     cmd.RF_SIZE_sel <= RF_SIZE_byte;
                 elsif status.IR(14 downto 12) = "001" then
+                    --- SH
                     cmd.RF_SIZE_sel <= RF_SIZE_half;
+                elsif status.IR(14 downto 12) = "010" then
+                    --- SW
+                    cmd.RF_SIZE_sel <= RF_SIZE_word;
                 end if;
                 cmd.RF_SIGN_enable <= '0';
                 cmd.mem_we <= '1';
