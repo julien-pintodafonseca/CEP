@@ -70,7 +70,12 @@ architecture RTL of CPU_PC is
         S_JALR,
         S_Interrupt,
         S_MRET,
-        S_CSRRW
+        S_CSRRW,
+        S_CSRRS,
+        S_CSRRC,
+        S_CSRRWI,
+        S_CSRRSI,
+        S_CSRRCI
     );
 
     signal state_d, state_q : State_type;
@@ -369,6 +374,21 @@ begin
                             when "001" =>
                                 -- CSRRW
                                 state_d <= S_CSRRW;
+                            when "010" =>
+                                -- CSRRS
+                                state_d <= S_CSRRS;
+                            when "011" =>
+                                -- CSRRC
+                                state_d <= S_CSRRC;
+                            when "101" =>
+                                -- CSRRWI
+                                state_d <= S_CSRRWI;
+                            when "110" =>
+                                -- CSRRSI
+                                state_d <= S_CSRRSI;
+                            when "111" =>
+                                -- CSRRCI
+                                state_d <= S_CSRRCI;
                             when others =>
                                 -- Pour détecter les ratés du décodage
                                 state_d <= S_Error;
@@ -650,7 +670,7 @@ begin
                 -- prochain état
                 state_d <= S_Pre_Fetch;
                 
-            when S_CSRRW =>
+            when S_CSRRW | S_CSRRS | S_CSRRC | S_CSRRWI | S_CSRRSI | S_CSRRCI =>
                 -- rd <- CSR
                 cmd.DATA_sel <= DATA_from_csr;
                 cmd.RF_we <= '1';
