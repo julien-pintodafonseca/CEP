@@ -401,6 +401,7 @@ begin
 
             ---------- Instructions arithmétiques ----------
             when S_ADDI | S_ADD | S_SUB =>
+                -- on vérifie l'état
                 if state_q = S_ADDI then
                     -- rd <- rs1 + immI
                     cmd.ALU_Y_sel <= ALU_Y_immI;
@@ -454,6 +455,7 @@ begin
 
             ---------- Instructions logiques ----------
             when S_ANDI | S_AND | S_ORI | S_OR | S_XORI | S_XOR =>
+                -- on vérifie l'état
                 if state_q = S_ANDI then
                     -- rd <- rs1 and immI
                     cmd.ALU_Y_sel <= ALU_Y_immI;
@@ -495,6 +497,7 @@ begin
 
             ---------- Instructions avec décalage ----------
             when S_SLL | S_SRL | S_SRA | S_SRAI | S_SLLI | S_SRLI =>
+                -- on vérifie l'état
                 if state_q = S_SLL then
                     -- rd <- sll(rs1,rs2)
                     cmd.SHIFTER_Y_sel <= SHIFTER_Y_rs2;
@@ -531,6 +534,7 @@ begin
 
             ---------- Instructions avec set ----------
             when S_SLT | S_SLTU | S_SLTI | S_SLTIU =>
+                -- on vérifie l'état
                 if state_q = S_SLT OR state_q = S_SLTU then
                     -- rd <- slt(rs1,rs2)
                     cmd.ALU_Y_sel <= ALU_Y_rf_rs2;
@@ -569,6 +573,7 @@ begin
                 cmd.PC_Y_sel <= PC_Y_cst_x04;
                 cmd.DATA_sel <= DATA_from_pc;
                 cmd.RF_we <= '1';
+                -- on vérifie l'état
                 if state_q = S_JAL then
                     -- PC <- PC + immJ
                     cmd.TO_PC_Y_sel <= TO_PC_Y_immJ;
@@ -600,6 +605,7 @@ begin
             when S_Load_Mem_AD =>
                 -- rd <- mem[AD]
                 cmd.DATA_sel <= DATA_from_mem;
+                -- on vérifie l'état
                 if status.IR(14 downto 12) = "010" then
                     cmd.RF_SIZE_sel <= RF_SIZE_word;
                     cmd.RF_SIGN_enable <= '0';
@@ -634,6 +640,7 @@ begin
             when S_Write_Mem_AD =>
                 -- écriture mem[AD]
                 cmd.ADDR_sel <= ADDR_from_ad;
+                -- on vérifie l'état
                 if status.IR(14 downto 12) = "010" then
                     cmd.RF_SIZE_sel <= RF_SIZE_word;
                 elsif status.IR(14 downto 12) = "000" then
@@ -674,9 +681,33 @@ begin
                 -- rd <- CSR
                 cmd.DATA_sel <= DATA_from_csr;
                 cmd.RF_we <= '1';
-                -- CSR <- rs1
-                cmd.cs.CSR_WRITE_mode <= WRITE_mode_simple;
-                cmd.cs.TO_CSR_sel <= TO_CSR_from_rs1;
+                -- on vérifie l'état
+                if state_q = S_CSRRW then
+                    -- CSR <- rs1
+                    cmd.cs.CSR_WRITE_mode <= WRITE_mode_simple;
+                    cmd.cs.TO_CSR_sel <= TO_CSR_from_rs1;
+                elsif state_q = S_CSRRS then
+                    -- CSR <- csr or rs1
+                    cmd.cs.CSR_WRITE_mode <= WRITE_mode_set;
+                    cmd.cs.TO_CSR_sel <= TO_CSR_from_rs1;
+                elsif state_q = S_CSRRC then
+                    -- CSR <- csr and !rs1
+                    cmd.cs.CSR_WRITE_mode <= WRITE_mode_clear;
+                    cmd.cs.TO_CSR_sel <= TO_CSR_from_rs1;
+                elsif state_q = S_CSRRWI then
+                    -- CSR <- (0 + zimm)
+                    cmd.cs.CSR_WRITE_mode <= WRITE_mode_simple;
+                    cmd.cs.TO_CSR_sel <= TO_CSR_from_imm;
+                elsif state_q = S_CSRRSI then
+                    -- CSR <- csr or (0 + zimm)
+                    cmd.cs.CSR_WRITE_mode <= WRITE_mode_set;
+                    cmd.cs.TO_CSR_sel <= TO_CSR_from_imm;
+                elsif state_q = S_CSRRCI then
+                    -- CSR <- csr and !(0 + zimm)
+                    cmd.cs.CSR_WRITE_mode <= WRITE_mode_clear;
+                    cmd.cs.TO_CSR_sel <= TO_CSR_from_imm;
+                end if;
+                -- on décode le champs csr
                 if status.IR(31 downto 20) = x"300" then
                     -- csr == 0x300
                     cmd.cs.CSR_sel <= CSR_from_mstatus;
