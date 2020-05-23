@@ -78,7 +78,7 @@ architecture RTL of CPU_PC is
 
 begin
 
-    FSM_synchrone : process(clk)
+    FSM_synchrone : process (clk)
     begin
         if clk'event and clk='1' then
             if rst='1' then
@@ -676,7 +676,10 @@ begin
                     cmd.cs.MEPC_sel <= MEPC_from_csr;
                 elsif status.IR(31 downto 20) = x"342" then
                     -- csr == 0x342
-                    -- TODO : mip / mcause
+                    cmd.cs.CSR_sel <= CSR_from_mcause;
+                elsif status.IR(31 downto 20) = x"344" then
+                    -- csr == 0x344
+                    cmd.cs.CSR_sel <= CSR_from_mip;
                 end if;
                 -- prochain état
                 state_d <= S_Pre_Fetch;
