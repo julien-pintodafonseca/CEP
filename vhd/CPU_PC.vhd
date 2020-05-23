@@ -656,6 +656,7 @@ begin
                 cmd.RF_we <= '1';
                 -- CSR <- rs1
                 cmd.cs.CSR_WRITE_mode <= WRITE_mode_simple;
+                cmd.cs.TO_CSR_sel <= TO_CSR_from_rs1;
                 if status.IR(31 downto 20) = x"300" then
                     -- csr == 0x300
                     cmd.cs.CSR_sel <= CSR_from_mstatus;
