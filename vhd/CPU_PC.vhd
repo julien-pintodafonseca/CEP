@@ -630,6 +630,7 @@ begin
             ---------- Instructions d'accès aux CSR ----------
             when S_Interrupt =>
                 -- MEPC <- PC
+                cmd.cs.CSR_WRITE_mode <= WRITE_mode_simple;
                 cmd.cs.MEPC_sel <= MEPC_from_pc;
                 cmd.cs.CSR_we <= CSR_mepc;
                 -- mstatus[MIE] <- 0
@@ -655,6 +656,7 @@ begin
                 cmd.RF_we <= '1';
                 -- CSR <- rs1
                 cmd.cs.CSR_WRITE_mode <= WRITE_mode_simple;
+                cmd.cs.TO_CSR_sel <= TO_CSR_from_rs1;
                 -- prochain état
                 state_d <= S_Pre_Fetch;
 
