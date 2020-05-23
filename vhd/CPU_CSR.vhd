@@ -102,8 +102,8 @@ begin
         end if;
 
         -- Gestion mip
-        mip(7) <= mtip; -- Interruption timer
-        mip(11) <= meip; -- Interruption externe
+        mip_d(7) <= mtip; -- Interruption timer
+        mip_d(11) <= meip; -- Interruption externe
 
         -- Selection TO_CSR_sel / Gestion TO_CSR
         if cmd.TO_CSR_Sel = TO_CSR_from_rs1 then
