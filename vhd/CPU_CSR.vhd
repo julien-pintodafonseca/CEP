@@ -36,8 +36,8 @@ architecture RTL of CPU_CSR is
     -- Fonction retournant la valeur à écrire dans un csr en fonction
     -- du « mode » d'écriture, qui dépend de l'instruction
     function CSR_write (CSR        : w32;
-                         CSR_reg    : w32;
-                         WRITE_mode : CSR_WRITE_mode_type)
+                        CSR_reg    : w32;
+                        WRITE_mode : CSR_WRITE_mode_type)
         return w32 is
         variable res : w32;
     begin
@@ -53,51 +53,120 @@ architecture RTL of CPU_CSR is
         return res;
     end CSR_write;
 
-    -- Variables
+    -- Signaux
+    signal mcause_d, mcause_q : w32;
+    signal mip_d, mip_q : w32;
+    signal mie_d, mie_q : w32;
+    signal mstatus_d, mstatus_q : w32;
+    signal mtvec_d, mtvec_q : w32;
+    signal mepc_d, mepc_q : w32;
     signal TO_CSR : w32;
-    signal mstatus : w32;
 
 begin
-    -- Registres
-    registers : process (all)
+    -- Registre CSR, gestion de l'horloge
+    csr_register_clock : process (clk)
     begin
-        -- Gestion TO_CSR_sel
+        if clk'event and clk='1' then
+            if rst ='1' then
+                mcause_q  <= w32_zero;
+                mip_q     <= w32_zero;
+                mie_q     <= w32_zero;
+                mstatus_q <= w32_zero;
+                mtvec_q   <= w32_zero;
+                mepc_q    <= w32_zero;
+            else
+                mcause_q  <= mcause_d;
+                mip_q     <= mip_d;
+                mie_q     <= mie_d;
+                mstatus_q <= mstatus_d;
+                mtvec_q   <= mtvec_d;
+                mepc_q    <= mepc_d;
+            end if;
+        end if;
+    end process csr_register_clock;
+
+    -- Registre CSR, gestion principale
+    csr_register_main : process (all)
+    begin
+        -- Les registres prennent leur ancienne valeur par défaut
+        mcause_d  <= mcause_q;
+        mip_d     <= mip_q;
+        mie_d     <= mie_q;
+        mstatus_d <= mstatus_q;
+        mtvec_d   <= mtvec_q;
+        mepc_d    <= mepc_q;
+
+        -- Gestion mcause
+        if irq = '1' then
+            mcause_d <= mcause;
+        end if;
+
+        -- Gestion mip
+        mip(7) <= mtip; -- Interruption timer
+        mip(11) <= meip; -- Interruption externe
+
+        -- Selection TO_CSR_sel / Gestion TO_CSR
         if cmd.TO_CSR_Sel = TO_CSR_from_rs1 then
             TO_CSR <= rs1;
         elsif cmd.TO_CSR_Sel = TO_CSR_from_imm then
             TO_CSR <= imm;
         end if;
 
-        -- Gestion CSR_sel
-        if cmd.CSR_sel = CSR_from_mcause then
-            csr <= mcause;
-        elsif cmd.CSR_sel = CSR_from_mip then
-            -- csr <= mip;
-        elsif cmd.CSR_sel = CSR_from_mie then
-            -- csr <= mie;
-        elsif cmd.CSR_sel = CSR_from_mstatus then
-            csr <= mstatus;
-        elsif cmd.CSR_sel = CSR_from_mtvec then
-            -- csr <= mtvec;
-        elsif cmd.CSR_sel = CSR_from_mepc then
-            -- csr <= mepc;
+        -- Gestion mie
+        if cmd.CSR_we = CSR_mie then
+            mie_d <= CSR_write(TO_CSR, mie_q, cmd.CSR_WRITE_mode);
         end if;
 
-        -- mstatus[MIE] <- 0
-        if cmd.MSTATUS_mie_reset = '1' then
-            mstatus(3) <= '0';
-        end if;
-
-        -- mstatus[MIE] <- 1
+        -- Gestion mstatus_set
         if cmd.MSTATUS_mie_set = '1' then
-            mstatus(3) <= '1';
+            mstatus_d(3) <= '1';
         end if;
 
-        -- Interruption timer
-        mip(7) <= mtip;
-        -- Interruption externe
-        mip(11) <= meip;
-    end process registers;
+        -- Gestion mstatus
+        if cmd.CSR_we = CSR_mstatus then
+            mstatus_d <= CSR_write(TO_CSR, mstatus_q, cmd.CSR_WRITE_mode);
+        end if;
 
-    it <= irq AND mstatus(3);
+        -- Gestion mstatus_reset
+        if cmd.MSTATUS_mie_reset = '1' then
+            mstatus_d(3) <= '0';
+        end if;
+
+        -- Gestion mtvec
+        if cmd.CSR_we = CSR_mstatus then
+            mtvec_d <= CSR_write(TO_CSR, mtvec_q, cmd.CSR_WRITE_mode);
+        end if;
+
+        -- Gestion mepc
+        if cmd.CSR_we = CSR_mepc then
+            if cmd.MEPC_sel = MEPC_from_pc then
+                mepc_d <= CSR_write(pc, mepc_q, cmd.CSR_WRITE_mode);
+            elsif cmd.MEPC_sel = MEPC_from_csr then
+                mepc_d <= CSR_write(TO_CSR, mepc_q, cmd.CSR_WRITE_mode);
+            end if;
+        end if;
+
+        -- Selection CSR_sel / Gestion sortie csr
+        if cmd.CSR_sel = CSR_from_mcause then
+            csr <= mcause_q;
+        elsif cmd.CSR_sel = CSR_from_mip then
+            csr <= mip_q;
+        elsif cmd.CSR_sel = CSR_from_mie then
+            csr <= mie_q;
+        elsif cmd.CSR_sel = CSR_from_mstatus then
+            csr <= mstatus_q;
+        elsif cmd.CSR_sel = CSR_from_mtvec then
+            csr <= mtvec_q;
+        elsif cmd.CSR_sel = CSR_from_mepc then
+            csr <= mepc_q;
+        end if;
+    end process csr_register_main;
+
+    -- Sorties
+    mip <= mip_q;
+    mie <= mie_q;
+    it <= irq AND mstatus_q(3);
+    mtvec <= mtvec_q;
+    mepc <= mepc_q;
+
 end architecture;
