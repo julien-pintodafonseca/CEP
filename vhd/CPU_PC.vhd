@@ -656,7 +656,27 @@ begin
                 cmd.RF_we <= '1';
                 -- CSR <- rs1
                 cmd.cs.CSR_WRITE_mode <= WRITE_mode_simple;
-                cmd.cs.TO_CSR_sel <= TO_CSR_from_rs1;
+                if status.IR(31 downto 20) = x"300" then
+                    -- csr == 0x300
+                    cmd.cs.CSR_sel <= CSR_from_mstatus;
+                    cmd.cs.CSR_we <= CSR_mstatus;
+                elsif status.IR(31 downto 20) = x"304" then
+                    -- csr == 0x304
+                    cmd.cs.CSR_sel <= CSR_from_mie;
+                    cmd.cs.CSR_we <= CSR_mie;
+                elsif status.IR(31 downto 20) = x"305" then
+                    -- csr == 0x305
+                    cmd.cs.CSR_sel <= CSR_from_mtvec;
+                    cmd.cs.CSR_we <= CSR_mtvec;
+                elsif status.IR(31 downto 20) = x"341" then
+                    -- csr == 0x341
+                    cmd.cs.CSR_sel <= CSR_from_mepc;
+                    cmd.cs.CSR_we <= CSR_mepc;
+                    cmd.cs.MEPC_sel <= MEPC_from_csr;
+                elsif status.IR(31 downto 20) = x"342" then
+                    -- csr == 0x342
+                    -- TODO : mip / mcause
+                end if;
                 -- prochain état
                 state_d <= S_Pre_Fetch;
 
