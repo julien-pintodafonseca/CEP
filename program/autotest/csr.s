@@ -28,6 +28,9 @@
         j attente                   # boucle infinie
 
     traitant:
+        lui  x30, 0x87654
+        addi x31, x30, 0x321
+
         addi  x2, x0, 1             # change x2 pour sortir de la boucle infinie
         lui   x3, 0x0c200           # acquitte l'interruption dans le plic
         addi  x3, x3, 4             # les deux lignes sont équivalentes à li x3,0x0C200004
@@ -41,6 +44,8 @@
     # max_cycle 200
     # pout_start
     # 12341234
+    # 87654321
+    # 000005AD
     # 000005AD
     # 000005AD
     # 000005AD
