@@ -97,45 +97,45 @@ begin
     begin
 
         -- Valeurs par défaut de cmd à définir selon les préférences de chacun
-        cmd.ALU_op               <= UNDEFINED;
-        cmd.LOGICAL_op           <= UNDEFINED;
-        cmd.ALU_Y_sel            <= UNDEFINED;
+        cmd.ALU_Y_sel            <= ALU_Y_rf_rs2;
+        cmd.ALU_op               <= ALU_plus;
+        cmd.LOGICAL_op           <= LOGICAL_and;
 
-        cmd.SHIFTER_op           <= UNDEFINED;
-        cmd.SHIFTER_Y_sel        <= UNDEFINED;
+        cmd.SHIFTER_Y_sel        <= SHIFTER_Y_rs2;
+        cmd.SHIFTER_op           <= SHIFT_ll;
 
-        cmd.RF_we                <= '0';
-        cmd.RF_SIZE_sel          <= UNDEFINED;
+        cmd.DATA_sel             <= DATA_from_pc;
+        cmd.RF_SIZE_sel          <= RF_SIZE_word;
         cmd.RF_SIGN_enable       <= '0';
-        cmd.DATA_sel             <= UNDEFINED;
+        cmd.RF_we                <= '0';
 
+        cmd.PC_sel               <= PC_from_pc;
         cmd.PC_we                <= '0';
-        cmd.PC_sel               <= UNDEFINED;
 
-        cmd.PC_X_sel             <= UNDEFINED;
-        cmd.PC_Y_sel             <= UNDEFINED;
+        cmd.PC_X_sel             <= PC_X_cst_x00;
+        cmd.PC_Y_sel             <= PC_Y_cst_x04;
 
-        cmd.TO_PC_Y_sel          <= UNDEFINED;
+        cmd.TO_PC_Y_sel          <= TO_PC_Y_cst_x04;
 
+        cmd.AD_Y_sel             <= AD_Y_immI;
         cmd.AD_we                <= '0';
-        cmd.AD_Y_sel             <= UNDEFINED;
 
         cmd.IR_we                <= '0';
 
-        cmd.ADDR_sel             <= UNDEFINED;
+        cmd.ADDR_sel             <= ADDR_from_pc;
         cmd.mem_we               <= '0';
         cmd.mem_ce               <= '0';
 
-        cmd.cs.CSR_we            <= UNDEFINED;
+        cmd.cs.CSR_we            <= CSR_mepc;
 
-        cmd.cs.TO_CSR_sel        <= UNDEFINED;
-        cmd.cs.CSR_sel           <= UNDEFINED;
-        cmd.cs.MEPC_sel          <= UNDEFINED;
+        cmd.cs.TO_CSR_sel        <= TO_CSR_from_rs1;
+        cmd.cs.CSR_sel           <= CSR_from_mepc;
+        cmd.cs.MEPC_sel          <= MEPC_from_csr;
 
         cmd.cs.MSTATUS_mie_set   <= '0';
         cmd.cs.MSTATUS_mie_reset <= '0';
 
-        cmd.cs.CSR_WRITE_mode    <= UNDEFINED;
+        cmd.cs.CSR_WRITE_mode    <= WRITE_mode_simple;
 
         state_d <= state_q;
 
@@ -146,7 +146,7 @@ begin
                 state_d <= S_Init;
 
             when S_Init =>
-                -- PC <- RESET_VECTOR
+                -- PC <- reset_vector
                 cmd.PC_sel <= PC_rstvec;
                 cmd.PC_we <= '1';
                 -- prochain état
@@ -446,7 +446,7 @@ begin
                 cmd.DATA_sel <= DATA_from_pc;
                 cmd.RF_we <= '1';
                 -- PC <- PC + 4
-                cmd.TO_PC_Y_sel <= To_PC_Y_cst_x04;
+                cmd.TO_PC_Y_sel <= TO_PC_Y_cst_x04;
                 cmd.PC_sel <= PC_from_pc;
                 cmd.PC_we <= '1';
                 -- prochain état
