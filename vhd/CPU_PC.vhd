@@ -126,7 +126,7 @@ begin
         cmd.mem_we               <= '0';
         cmd.mem_ce               <= '0';
 
-        cmd.cs.CSR_we            <= CSR_mepc;
+        cmd.cs.CSR_we            <= UNDEFINED;
 
         cmd.cs.TO_CSR_sel        <= TO_CSR_from_rs1;
         cmd.cs.CSR_sel           <= CSR_from_mepc;
