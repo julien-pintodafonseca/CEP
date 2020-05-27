@@ -74,3 +74,7 @@ Fichier de [log](https://CEP_Deploy.pages.ensimag.fr/apprentis/Eval/pintodaj_eva
 [![CSRRW status](https://CEP_Deploy.pages.ensimag.fr/apprentis/Eval/pintodaj_eval//CSRRW.svg)](https://CEP_Deploy.pages.ensimag.fr/apprentis/Eval/pintodaj_eval//CSRRW.svg)
 [![CSRRWI status](https://CEP_Deploy.pages.ensimag.fr/apprentis/Eval/pintodaj_eval//CSRRWI.svg)](https://CEP_Deploy.pages.ensimag.fr/apprentis/Eval/pintodaj_eval//CSRRWI.svg)
 [![IT status](https://CEP_Deploy.pages.ensimag.fr/apprentis/Eval/pintodaj_eval//IT.svg)](https://CEP_Deploy.pages.ensimag.fr/apprentis/Eval/pintodaj_eval//IT.svg)
+
+## Note
+
+**Travail effectué :** toutes les instructions typiques et leur famille correspondante (tableau 2.1.2)
